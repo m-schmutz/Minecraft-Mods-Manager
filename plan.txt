@@ -1,0 +1,24 @@
+Server:
+    - Webpages:
+        - Home Page:
+            - Download links for neoforge, shaders, and client from this program
+
+        - Mods Page:
+            - List of each mod, the version, description and curseforge page link
+
+        - Add Mod Page:
+            - form that takes in a friendly name, file, description and curseforge link
+
+        - Update Mod Page:
+            - form that updates an existing mod with a new version and file (maybe description)
+
+    - API
+        - Info endpoint
+            - allows client to get information about what mods are present and their version (some sort of manifest)
+
+        - Download endpoint
+            - allows client to download jar files 
+
+
+Client:
+    - uhhh something something does client stuff
