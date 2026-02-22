@@ -22,3 +22,18 @@ Server:
 
 Client:
     - uhhh something something does client stuff
+
+
+
+
+
+
+Making program portable:
+    - use pyinstaller to create an exe from python files, this way we can use pip packages without having to worry about making virtual environment on machines
+
+    Installation:
+        - pip install pyinstaller
+
+    Usage:
+        - pyinstaller --onefile your_script.py
+            - this analyzes imports of 'your_script.py' and creates one exe file 
