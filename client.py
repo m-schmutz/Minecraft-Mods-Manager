@@ -160,7 +160,7 @@ class ProgramOption:
         self.name = name
         self.callback = callback
         self.switches = switches
-        self.is_developer = is_developer
+        self.is_developer = is_developer # currently only used in interactive mode to display as gray
 
     def _raise_if_bad(self):
         if not isinstance(self.name, str):
@@ -242,21 +242,23 @@ def parse_cmdline():
     return tasks
 
 
-def zip_mods():
+def zip_client_mods():
     global CURRENT_DIR_ABSPATH
     global OUTPUT_DIR_ABSPATH
     
+    # The directory containing all client-side mods
     input_dir_abspath = os.path.join(CURRENT_DIR_ABSPATH, "resources/mods")
     if not os.path.isdir(input_dir_abspath):
         raise Exception("Cannot find mods to zip")
     
+    # The zipfile to create
     output_file_abspath = os.path.join(OUTPUT_DIR_ABSPATH, "mods.zip")
     if ask_user_replace_file(output_file_abspath):
         file = zip_dir(input_dir_abspath, OUTPUT_DIR_ABSPATH)
         print("Successfully created", os.path.relpath(file))
 
-def update_mods():
-    # Determine path to .minecraft directory
+def update_client_mods():
+    # Determine path to local .minecraft directory
     dot_minecraft_dir_abspath = os.path.join(os.path.expanduser("~"), "AppData", "Roaming", ".minecraft")
     if not os.path.exists(dot_minecraft_dir_abspath):
         raise Exception("Could not locate .minecraft directory")
@@ -266,7 +268,7 @@ def update_mods():
     with zipfile.ZipFile(new_mods_zip_abspath) as zip:
         new_mod_filenames = set(entry.filename for entry in zip.infolist())
 
-    # Gather existing mods
+    # Gather existing mod names
     mods_dir_abspath = os.path.join(dot_minecraft_dir_abspath, "mods")
     existing_mod_filenames = set(f for f in os.listdir(mods_dir_abspath) if os.path.isfile(os.path.join(mods_dir_abspath, f)))
 
@@ -302,8 +304,8 @@ def update_mods():
 
 PROGRAM_OPTIONS = (
     ProgramOption("Quit", raise_quit_exception),
-    ProgramOption("Update Mods", update_mods, ("-u", "--update")),
-    ProgramOption("Zip Mods", zip_mods, ("-z", "--zip"), is_developer=True),
+    ProgramOption("Update Mods", update_client_mods, ("-u", "--update")),
+    ProgramOption("Zip Mods", zip_client_mods, ("-z", "--zip"), is_developer=True),
 )
 
 def main():
