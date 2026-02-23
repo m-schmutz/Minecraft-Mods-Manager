@@ -271,7 +271,7 @@ def update_client_mods():
     global MOD_PACK_ENDPOINT
 
     # Determine path to local .minecraft directory
-    dot_minecraft_dir_abspath = get_minecraft_dir()
+    mods_dir_abspath = os.path.join(get_minecraft_dir(), "mods")
 
     # Download new mods
     new_mods_zip_abspath = download_file(FILE_SERVER_ADDR + MOD_PACK_ENDPOINT, "mods.zip")
@@ -279,7 +279,6 @@ def update_client_mods():
         new_mod_filenames = set(entry.filename for entry in zip.infolist())
 
     # Gather existing mod names
-    mods_dir_abspath = os.path.join(dot_minecraft_dir_abspath, "mods")
     existing_mod_filenames = set(f for f in os.listdir(mods_dir_abspath) if os.path.isfile(os.path.join(mods_dir_abspath, f)))
 
     # If the user has mods which are not part of the new set, ask if they
@@ -325,7 +324,15 @@ def update_client_shaders():
     
     shutil.move(new_shaderpack_abspath, dest)
     
+def clear_cache():
+    downloads_dir = os.path.join(CURRENT_DIR_ABSPATH, "downloads")
+    output_dir = os.path.join(CURRENT_DIR_ABSPATH, "output")
 
+    for filename in os.listdir(downloads_dir):
+        os.remove(os.path.join(downloads_dir, filename))
+    
+    for filename in os.listdir(output_dir):
+        os.remove(os.path.join(output_dir, filename))
 
 
 
@@ -339,6 +346,7 @@ PROGRAM_OPTIONS = (
     ProgramOption("Update Mods", update_client_mods, ("-m", "--update-mods")),
     ProgramOption("Update Shader Pack", update_client_shaders, ("-s", "--update-shaders")),
     ProgramOption("Zip Mods", zip_client_mods, ("-z", "--zip"), is_developer=True),
+    ProgramOption("Clear cache", clear_cache, ("-c", "--clear-cache"), is_developer=True),
 )
 
 def main():
