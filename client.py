@@ -1,6 +1,8 @@
 try:
     import os
+    import sys
     import signal
+    import typing
     import zipfile
     import requests
 except ModuleNotFoundError as e:
@@ -146,14 +148,35 @@ def zip_dir(src_dir: str, dst_dir: str):
 
 ### PROGRAM ROUTINES ###
 
+CallbackType = typing.Callable[[None],None]
+
 class ProgramOption:
-    def __init__(self, name: str, callback, *, is_developer: bool = False):
+    def __init__(self,
+                 name: str,
+                 callback: CallbackType,
+                 switches: tuple[str] = None,
+                 *,
+                 is_developer: bool = False):
         self.name = name
         self.callback = callback
+        self.switches = switches
         self.is_developer = is_developer
-    
-    # def __call__(self, *args, **kwds):
-    #     pass
+
+    def _raise_if_bad(self):
+        if not isinstance(self.name, str):
+            raise TypeError("name must be a string")
+        
+        if not callable(self.callback):
+            raise TypeError("callback must be callable")
+        
+        if self.switches is not None:
+            for switch in self.switches:
+                if not isinstance(switch, str):
+                    raise TypeError("All switches must be a string")
+        
+        if not isinstance(self.is_developer, bool):
+            raise TypeError("is_developer must be a boolean")
+
 
 def setup():
     global CURRENT_DIR_ABSPATH
@@ -167,6 +190,11 @@ def setup():
 
     # Catch Ctrl+C
     signal.signal(signal.SIGINT, raise_quit_exception)
+
+
+    # Validate all program options are set correctly
+    for po in PROGRAM_OPTIONS:
+        po._raise_if_bad()
 
 
     # Move to directory which contains this file
@@ -201,6 +229,17 @@ def setup():
             line += "\x1b[0m"
         program_option_lines.append(line)
     PROGRAM_OPTIONS_STRING = "\n".join(program_option_lines)
+
+def parse_cmdline():
+    global PROGRAM_OPTIONS
+
+    tasks: list[CallbackType] = []
+    for arg in sys.argv:
+        for po in PROGRAM_OPTIONS:
+            if po.switches is not None and arg in po.switches:
+                tasks.append(po.callback)
+    
+    return tasks
 
 
 def zip_mods():
@@ -263,27 +302,34 @@ def update_mods():
 
 PROGRAM_OPTIONS = (
     ProgramOption("Quit", raise_quit_exception),
-    ProgramOption("Update Mods", update_mods),
-    ProgramOption("Zip Mods", zip_mods, is_developer=True),
+    ProgramOption("Update Mods", update_mods, ("-u", "--update")),
+    ProgramOption("Zip Mods", zip_mods, ("-z", "--zip"), is_developer=True),
 )
 
 def main():
     global PROGRAM_OPTIONS
-    global NUM_PROGRAM_OPTIONS
     global VALID_PROGRAM_OPTIONS_RESPONSES
     global PROGRAM_OPTIONS_STRING
     
     try:
         setup()
-        while True:
-            print(PROGRAM_OPTIONS_STRING)
-            user_resp = ask_user(" > ", VALID_PROGRAM_OPTIONS_RESPONSES, show_responses=False)
-            index = int(user_resp) - 1
-            PROGRAM_OPTIONS[index].callback()
+        tasks = parse_cmdline()
+
+        if tasks:
+            # Run specified tasks then quit
+            for task in tasks:
+                task()
+        else:
+            # Run interactively
+            while True:
+                print(PROGRAM_OPTIONS_STRING)
+                user_resp = ask_user(" > ", VALID_PROGRAM_OPTIONS_RESPONSES, show_responses=False)
+                index = int(user_resp) - 1
+                PROGRAM_OPTIONS[index].callback()
     except QuitException:
         print("Quitting...")
     except Exception as e:
-        print("Terminating from exception:")
+        print(f"Terminating from exception: \x1b[91m{e}\x1b[0m") # red message
         raise e
 
 if __name__ == "__main__":
