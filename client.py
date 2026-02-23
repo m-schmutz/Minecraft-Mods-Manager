@@ -14,6 +14,9 @@ except ModuleNotFoundError as e:
 ### CONSTANTS ###
 
 FILE_SERVER_ADDR = "http://172.30.1.1:8000/files/"
+MOD_PACK_ENDPOINT       = "ModPack.zip"
+SHADER_PACK_ENDPOINT    = "BSL_v10.1.zip"
+NEOFORGE_ENDPOINT       = "neoforge-21.1.218-installer.jar"
 
 OUTPUT_DIR_ABSPATH: str
 CURRENT_DIR_ABSPATH: str
@@ -258,13 +261,15 @@ def zip_client_mods():
         print("Successfully created", os.path.relpath(file))
 
 def update_client_mods():
+    global MOD_PACK_ENDPOINT
+
     # Determine path to local .minecraft directory
     dot_minecraft_dir_abspath = os.path.join(os.path.expanduser("~"), "AppData", "Roaming", ".minecraft")
     if not os.path.exists(dot_minecraft_dir_abspath):
         raise Exception("Could not locate .minecraft directory")
 
     # Download new mods
-    new_mods_zip_abspath = download_file(FILE_SERVER_ADDR + "ModPack.zip", "mods.zip")
+    new_mods_zip_abspath = download_file(FILE_SERVER_ADDR + MOD_PACK_ENDPOINT, "mods.zip")
     with zipfile.ZipFile(new_mods_zip_abspath) as zip:
         new_mod_filenames = set(entry.filename for entry in zip.infolist())
 
