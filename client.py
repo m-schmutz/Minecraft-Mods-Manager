@@ -5,6 +5,7 @@ try:
     import typing
     import zipfile
     import requests
+    import shutil
 except ModuleNotFoundError as e:
     print("Python module not installed:", e)
     quit()
@@ -88,6 +89,12 @@ def ask_user_replace_file(path: str):
             return False
     return True
 
+
+def get_minecraft_dir():
+    dot_minecraft_dir_abspath = os.path.join(os.path.expanduser("~"), "AppData", "Roaming", ".minecraft")
+    if not os.path.exists(dot_minecraft_dir_abspath):
+        raise Exception("Could not locate .minecraft directory")
+    return dot_minecraft_dir_abspath
 
 def download_file(url: str, filename: str):
     global DOWNLOADS_DIR_ABSPATH    
@@ -264,9 +271,7 @@ def update_client_mods():
     global MOD_PACK_ENDPOINT
 
     # Determine path to local .minecraft directory
-    dot_minecraft_dir_abspath = os.path.join(os.path.expanduser("~"), "AppData", "Roaming", ".minecraft")
-    if not os.path.exists(dot_minecraft_dir_abspath):
-        raise Exception("Could not locate .minecraft directory")
+    dot_minecraft_dir_abspath = get_minecraft_dir()
 
     # Download new mods
     new_mods_zip_abspath = download_file(FILE_SERVER_ADDR + MOD_PACK_ENDPOINT, "mods.zip")
@@ -303,13 +308,36 @@ def update_client_mods():
     # Delete downloaded zip
     os.remove(new_mods_zip_abspath)
 
+def update_client_shaders():
+    global SHADER_PACK_ENDPOINT
+
+    # Get path to local shaderpack dir
+    shaderpacks_dir_abspath = os.path.join(get_minecraft_dir(), "shaderpacks")
+
+    # Download shaderpack
+    new_shaderpack_abspath = download_file(FILE_SERVER_ADDR + SHADER_PACK_ENDPOINT, SHADER_PACK_ENDPOINT)
+
+    # Install/replace the shaderpack
+    dest = os.path.join(shaderpacks_dir_abspath, SHADER_PACK_ENDPOINT)
+    if os.path.exists(dest):
+        if "n" == ask_user_replace_file(dest):
+            return
+    
+    shutil.move(new_shaderpack_abspath, dest)
+    
+
+
+
+
+
 
 
 ### MAIN PROGRAM ###
 
 PROGRAM_OPTIONS = (
     ProgramOption("Quit", raise_quit_exception),
-    ProgramOption("Update Mods", update_client_mods, ("-u", "--update")),
+    ProgramOption("Update Mods", update_client_mods, ("-m", "--update-mods")),
+    ProgramOption("Update Shader Pack", update_client_shaders, ("-s", "--update-shaders")),
     ProgramOption("Zip Mods", zip_client_mods, ("-z", "--zip"), is_developer=True),
 )
 
