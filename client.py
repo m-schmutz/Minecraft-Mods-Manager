@@ -345,7 +345,7 @@ PROGRAM_OPTIONS = (
     ProgramOption("Quit", raise_quit_exception),
     ProgramOption("Update Mods", update_client_mods, ("-m", "--update-mods")),
     ProgramOption("Update Shader Pack", update_client_shaders, ("-s", "--update-shaders")),
-    ProgramOption("Zip Mods", zip_client_mods, ("-z", "--zip"), is_developer=True),
+    ProgramOption("Zip Mods", zip_client_mods, ("-z", "--zip-mods"), is_developer=True),
     ProgramOption("Clear cache", clear_cache, ("-c", "--clear-cache"), is_developer=True),
 )
 
