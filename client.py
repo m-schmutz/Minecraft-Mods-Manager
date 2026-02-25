@@ -1,10 +1,12 @@
 try:
     import os
-    import sys
     import signal
-    import typing
     import zipfile
     import requests
+    import shutil
+    import hashlib
+    import json
+    import argparse
     import shutil
 except ModuleNotFoundError as e:
     print("Python module not installed:", e)
@@ -22,9 +24,6 @@ NEOFORGE_ENDPOINT       = "neoforge-21.1.218-installer.jar"
 OUTPUT_DIR_ABSPATH: str
 CURRENT_DIR_ABSPATH: str
 DOWNLOADS_DIR_ABSPATH: str
-NUM_PROGRAM_OPTIONS: int
-VALID_PROGRAM_OPTIONS_RESPONSES: tuple[str]
-PROGRAM_OPTIONS_STRING: str
 
 
 
@@ -158,53 +157,14 @@ def zip_dir(src_dir: str, dst_dir: str):
 
 ### PROGRAM ROUTINES ###
 
-CallbackType = typing.Callable[[None],None]
-
-class ProgramOption:
-    def __init__(self,
-                 name: str,
-                 callback: CallbackType,
-                 switches: tuple[str] = None,
-                 *,
-                 is_developer: bool = False):
-        self.name = name
-        self.callback = callback
-        self.switches = switches
-        self.is_developer = is_developer # currently only used in interactive mode to display as gray
-
-    def _raise_if_bad(self):
-        if not isinstance(self.name, str):
-            raise TypeError("name must be a string")
-        
-        if not callable(self.callback):
-            raise TypeError("callback must be callable")
-        
-        if self.switches is not None:
-            for switch in self.switches:
-                if not isinstance(switch, str):
-                    raise TypeError("All switches must be a string")
-        
-        if not isinstance(self.is_developer, bool):
-            raise TypeError("is_developer must be a boolean")
-
-
 def setup():
     global CURRENT_DIR_ABSPATH
     global DOWNLOADS_DIR_ABSPATH
     global OUTPUT_DIR_ABSPATH
-    global PROGRAM_OPTIONS
-    global NUM_PROGRAM_OPTIONS
-    global VALID_PROGRAM_OPTIONS_RESPONSES
-    global PROGRAM_OPTIONS_STRING
 
 
-    # Catch Ctrl+C
+    # Quit gracefully on Ctrl+C
     signal.signal(signal.SIGINT, raise_quit_exception)
-
-
-    # Validate all program options are set correctly
-    for po in PROGRAM_OPTIONS:
-        po._raise_if_bad()
 
 
     # Move to directory which contains this file
@@ -216,7 +176,7 @@ def setup():
 
 
     # Create downloads directory
-    DOWNLOADS_DIR_ABSPATH = os.path.abspath("downloads")
+    DOWNLOADS_DIR_ABSPATH = os.path.abspath(os.path.join(".cache", "downloads"))
     if not os.path.exists(DOWNLOADS_DIR_ABSPATH):
         os.makedirs(DOWNLOADS_DIR_ABSPATH)
     
@@ -226,45 +186,53 @@ def setup():
         os.makedirs(OUTPUT_DIR_ABSPATH)
 
 
-    # Set program options helper info. Make developer options gray and italic.
-    NUM_PROGRAM_OPTIONS = len(PROGRAM_OPTIONS)
-    VALID_PROGRAM_OPTIONS_RESPONSES = tuple(str(i) for i in range(1, NUM_PROGRAM_OPTIONS + 1))
-    program_option_lines = list()
-    for i,po in enumerate(PROGRAM_OPTIONS):
-        line = str()
-        if po.is_developer:
-            line += "\x1b[3;90m"
-        line += f"({VALID_PROGRAM_OPTIONS_RESPONSES[i]}) {po.name}"
-        if po.is_developer:
-            line += "\x1b[0m"
-        program_option_lines.append(line)
-    PROGRAM_OPTIONS_STRING = "\n".join(program_option_lines)
+    init_mod_hash_table()
 
-def parse_cmdline():
-    global PROGRAM_OPTIONS
-
-    tasks: list[CallbackType] = []
-    for arg in sys.argv:
-        for po in PROGRAM_OPTIONS:
-            if po.switches is not None and arg in po.switches:
-                tasks.append(po.callback)
-    
-    return tasks
-
-
-def zip_client_mods():
+def init_mod_hash_table():
     global CURRENT_DIR_ABSPATH
+
+    _FILE = os.path.join(CURRENT_DIR_ABSPATH, ".cache", "mod-hashes.json")
+
+    table = dict()
+    mods_dir = os.path.join(get_minecraft_dir(), "mods")
+
+    if os.path.exists(_FILE):
+        with open(_FILE) as file:
+            table = json.load(file)
+    else:
+        print("Initializing mods hash table... ", end="", flush=True)
+        for mod in (f for f in os.listdir(mods_dir) if os.path.isfile(os.path.join(mods_dir, f))):
+            with open(os.path.join(mods_dir, mod), "rb") as file:
+                table.update({mod: hashlib.sha256(file.read()).hexdigest()})
+        
+        with open(_FILE, "w") as file:
+            file.write(json.dumps(table))
+        print("Done")
+    
+    return table
+
+
+
+def zip_mods(src_dir: str):
     global OUTPUT_DIR_ABSPATH
     
-    # The directory containing all client-side mods
-    input_dir_abspath = os.path.join(CURRENT_DIR_ABSPATH, "resources/mods")
-    if not os.path.isdir(input_dir_abspath):
-        raise Exception("Cannot find mods to zip")
+    # The directory containing all mods to zip
+    src_dir = os.path.abspath(src_dir)
+    if not os.path.isdir(src_dir):
+        raise Exception(f"Directory does not exist: {os.path.relpath(src_dir)}")
+    else:
+        files = os.listdir(src_dir)
+        if not files:
+            raise Exception(f"Directory is empty: {os.path.relpath(src_dir)}")
+        else:
+            for file in files:
+                if not file.endswith(".jar"):
+                    raise Exception(f"All files in {os.path.relpath(src_dir)} must be a .jar")
     
     # The zipfile to create
     output_file_abspath = os.path.join(OUTPUT_DIR_ABSPATH, "mods.zip")
     if ask_user_replace_file(output_file_abspath):
-        file = zip_dir(input_dir_abspath, OUTPUT_DIR_ABSPATH)
+        file = zip_dir(src_dir, OUTPUT_DIR_ABSPATH)
         print("Successfully created", os.path.relpath(file))
 
 def update_client_mods():
@@ -325,14 +293,8 @@ def update_client_shaders():
     shutil.move(new_shaderpack_abspath, dest)
     
 def clear_cache():
-    downloads_dir = os.path.join(CURRENT_DIR_ABSPATH, "downloads")
-    output_dir = os.path.join(CURRENT_DIR_ABSPATH, "output")
-
-    for filename in os.listdir(downloads_dir):
-        os.remove(os.path.join(downloads_dir, filename))
-    
-    for filename in os.listdir(output_dir):
-        os.remove(os.path.join(output_dir, filename))
+    downloads_dir = os.path.join(CURRENT_DIR_ABSPATH, ".cache")
+    shutil.rmtree(downloads_dir)
 
 
 
@@ -341,38 +303,54 @@ def clear_cache():
 
 ### MAIN PROGRAM ###
 
-PROGRAM_OPTIONS = (
-    ProgramOption("Quit", raise_quit_exception),
-    ProgramOption("Update Mods", update_client_mods, ("-m", "--update-mods")),
-    ProgramOption("Update Shader Pack", update_client_shaders, ("-s", "--update-shaders")),
-    ProgramOption("Zip Mods", zip_client_mods, ("-z", "--zip-mods"), is_developer=True),
-    ProgramOption("Clear cache", clear_cache, ("-c", "--clear-cache"), is_developer=True),
-)
-
 def main():
-    global PROGRAM_OPTIONS
-    global VALID_PROGRAM_OPTIONS_RESPONSES
-    global PROGRAM_OPTIONS_STRING
+    parser = argparse.ArgumentParser(prog=__file__.rsplit(os.sep, maxsplit=1)[-1],
+                                     add_help=False,
+                                     exit_on_error=False)
+    parser.add_argument("-h", "--help",
+                        action="store_true",
+                        help="Show this message and exit.")
+    parser.add_argument("-m", "--update-mods",
+                        action="store_true",
+                        help="Download and install latest mods.")
+    parser.add_argument("-s", "--update-shaders",
+                        action="store_true",
+                        help="Download and install latest shaders.")
+    parser.add_argument("--zip-mods",
+                        nargs=1,
+                        metavar="DIR",
+                        help="Compress all mods in DIR to a zip file.")
+    parser.add_argument("--clear-cache",
+                        action="store_true",
+                        help="Clear your local cache")
     
     try:
-        setup()
-        tasks = parse_cmdline()
+        args = vars(parser.parse_args())
+        if not any(args.values()) or args["help"]:
+            parser.print_help()
+            return
 
-        if tasks:
-            # Run specified tasks then quit
-            for task in tasks:
-                task()
-        else:
-            # Run interactively
-            while True:
-                print(PROGRAM_OPTIONS_STRING)
-                user_resp = ask_user(" > ", VALID_PROGRAM_OPTIONS_RESPONSES, show_responses=False)
-                index = int(user_resp) - 1
-                PROGRAM_OPTIONS[index].callback()
+        setup()
+
+        # Run specified tasks then quit
+        if args["update_mods"]:
+            update_client_mods()
+        if args["update_shaders"]:
+            update_client_shaders()
+        if args["zip_mods"]:
+            zip_mods(*args["zip_mods"])
+        if args["clear_cache"]:
+            clear_cache()
+
+    except argparse.ArgumentError as e:
+        print(e)
+        parser.print_usage()
+    
     except QuitException:
         print("Quitting...")
+    
     except Exception as e:
-        print(f"Terminating from exception: \x1b[91m{e}\x1b[0m") # red message
+        print(f"\x1b[91m{e}\x1b[0m") # red message
         raise e
 
 if __name__ == "__main__":
