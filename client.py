@@ -21,7 +21,6 @@ MOD_PACK_ENDPOINT       = "ModPack.zip"
 SHADER_PACK_ENDPOINT    = "BSL_v10.1.zip"
 NEOFORGE_ENDPOINT       = "neoforge-21.1.218-installer.jar"
 
-OUTPUT_DIR_ABSPATH: str
 CURRENT_DIR_ABSPATH: str
 DOWNLOADS_DIR_ABSPATH: str
 
@@ -120,38 +119,35 @@ def download_file(url: str, filename: str):
     
     return dest_abspath
 
-def zip_dir(src_dir: str, dst_dir: str):
+def zip_dir(src_dir: str, dst: str):
     if not isinstance(src_dir, str):
         raise TypeError("src_dir must be a str")
     
-    if not isinstance(dst_dir, str):
-        raise TypeError("dst_dir must be a str")
+    if not isinstance(dst, str):
+        raise TypeError("dst must be a str")
     
-
-    # Make paths absolute
-    if os.path.isdir(src_dir):
-        src_dir = os.path.abspath(src_dir)
-    else:
+    # Ensure directory exists
+    src_dir = os.path.abspath(src_dir)
+    if not os.path.isdir(src_dir):
         raise NotADirectoryError(src_dir)
     
-    if os.path.isdir(dst_dir):
-        dst_dir = os.path.abspath(dst_dir)
-    else:
-        raise NotADirectoryError(dst_dir)
-    
+    # Zip all entries
+    dst = os.path.abspath(dst)
+    if ask_user_replace_file(dst):
+        parent_dir = os.path.dirname(dst)
+        if not os.path.exists(parent_dir):
+            os.makedirs(parent_dir)
 
-    zip_filename = os.path.basename(src_dir) + ".zip"
-    output_file_abspath = os.path.join(dst_dir, zip_filename)
-    mod_filenames = tuple(f for f in os.listdir(src_dir) if os.path.isfile(os.path.join(src_dir, f)))
-    
-    print(f"Zipping mods ({len(mod_filenames)})...")    
-    with zipfile.ZipFile(output_file_abspath, "w") as zip:
-        for file in mod_filenames:
-            abspath = os.path.join(src_dir, file)
-            print("  Adding", os.path.relpath(abspath))
-            zip.write(abspath, file)
-    
-    return output_file_abspath
+        print(f"Zipping directory...")
+        with zipfile.ZipFile(dst, "w") as zip:
+            for entry in os.listdir(src_dir):
+                path = os.path.join(src_dir, entry)
+                print("  Adding", os.path.relpath(path))
+                zip.write(path, arcname=entry)
+
+        return True
+
+    return False
 
 
 
@@ -160,7 +156,6 @@ def zip_dir(src_dir: str, dst_dir: str):
 def setup():
     global CURRENT_DIR_ABSPATH
     global DOWNLOADS_DIR_ABSPATH
-    global OUTPUT_DIR_ABSPATH
 
 
     # Quit gracefully on Ctrl+C
@@ -179,11 +174,6 @@ def setup():
     DOWNLOADS_DIR_ABSPATH = os.path.abspath(os.path.join(".cache", "downloads"))
     if not os.path.exists(DOWNLOADS_DIR_ABSPATH):
         os.makedirs(DOWNLOADS_DIR_ABSPATH)
-    
-    # Create output directory
-    OUTPUT_DIR_ABSPATH = os.path.abspath("output")
-    if not os.path.exists(OUTPUT_DIR_ABSPATH):
-        os.makedirs(OUTPUT_DIR_ABSPATH)
 
 
     init_mod_hash_table()
@@ -213,27 +203,31 @@ def init_mod_hash_table():
 
 
 
-def zip_mods(src_dir: str):
-    global OUTPUT_DIR_ABSPATH
-    
-    # The directory containing all mods to zip
+def zip_mods(src_dir: str, dst: str):
+    # Ensure directory exists
     src_dir = os.path.abspath(src_dir)
     if not os.path.isdir(src_dir):
         raise Exception(f"Directory does not exist: {os.path.relpath(src_dir)}")
-    else:
-        files = os.listdir(src_dir)
-        if not files:
-            raise Exception(f"Directory is empty: {os.path.relpath(src_dir)}")
-        else:
-            for file in files:
-                if not file.endswith(".jar"):
-                    raise Exception(f"All files in {os.path.relpath(src_dir)} must be a .jar")
     
-    # The zipfile to create
-    output_file_abspath = os.path.join(OUTPUT_DIR_ABSPATH, "mods.zip")
-    if ask_user_replace_file(output_file_abspath):
-        file = zip_dir(src_dir, OUTPUT_DIR_ABSPATH)
-        print("Successfully created", os.path.relpath(file))
+    # Validate directory form
+    entries = os.listdir(src_dir)
+    dirs = tuple(d for d in entries if os.path.isdir(os.path.join(src_dir, d)))
+    files = tuple(f for f in entries if os.path.isfile(os.path.join(src_dir, f)))
+
+    if dirs:
+        raise Exception("The provided directory should not contain directories")
+
+    if not files:
+        raise Exception("The provided directory is empty")
+
+    for file in files:
+        if not file.endswith(".jar"):
+            raise Exception("All files in the provided directory should be a .jar")
+    
+    # Zip it
+    dst = os.path.abspath(dst)
+    if zip_dir(src_dir, dst):
+        print("Successfully created", os.path.relpath(dst))
 
 def update_client_mods():
     global MOD_PACK_ENDPOINT
@@ -317,15 +311,18 @@ def main():
                         action="store_true",
                         help="Download and install latest shaders.")
     parser.add_argument("--zip-mods",
-                        nargs=1,
-                        metavar="DIR",
-                        help="Compress all mods in DIR to a zip file.")
+                        nargs=2,
+                        metavar=("DIR", "FILE"),
+                        help="Compress all mods in DIR to a zip file FILE.")
     parser.add_argument("--clear-cache",
                         action="store_true",
-                        help="Clear your local cache")
-    
+                        help="Clear your local cache.")
+        
     try:
         args = vars(parser.parse_args())
+        # print(args)
+        # return
+
         if not any(args.values()) or args["help"]:
             parser.print_help()
             return
@@ -351,7 +348,7 @@ def main():
     
     except Exception as e:
         print(f"\x1b[91m{e}\x1b[0m") # red message
-        raise e
+        # raise e
 
 if __name__ == "__main__":
     main()
