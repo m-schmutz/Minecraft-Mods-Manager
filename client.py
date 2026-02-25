@@ -21,8 +21,9 @@ MOD_PACK_ENDPOINT       = "ModPack.zip"
 SHADER_PACK_ENDPOINT    = "BSL_v10.1.zip"
 NEOFORGE_ENDPOINT       = "neoforge-21.1.218-installer.jar"
 
-CURRENT_DIR_ABSPATH: str
-DOWNLOADS_DIR_ABSPATH: str
+PATH_CACHE      = ".cache"
+PATH_DOWNLOADS  = os.path.join(PATH_CACHE, "downloads")
+PATH_MOD_HASHES = os.path.join(PATH_CACHE, "mod-hashes.json")
 
 
 
@@ -36,6 +37,10 @@ class QuitException(Exception):
 def raise_quit_exception(*args, **kwargs):
     """This takes any args to appease signal handling btw"""
     raise QuitException()
+
+
+def red(s: str):
+    return f"\x1b[91m{s}\x1b[0m"
 
 
 def ask_user(query: str,
@@ -95,8 +100,7 @@ def get_minecraft_dir():
     return dot_minecraft_dir_abspath
 
 def download_file(url: str, filename: str):
-    global DOWNLOADS_DIR_ABSPATH    
-    dest_abspath = os.path.join(DOWNLOADS_DIR_ABSPATH, filename)
+    dest_abspath = os.path.join(PATH_DOWNLOADS, filename)
 
     if ask_user_replace_file(dest_abspath):
         did_timeout = False
@@ -154,52 +158,36 @@ def zip_dir(src_dir: str, dst: str):
 ### PROGRAM ROUTINES ###
 
 def setup():
-    global CURRENT_DIR_ABSPATH
-    global DOWNLOADS_DIR_ABSPATH
-
-
     # Quit gracefully on Ctrl+C
     signal.signal(signal.SIGINT, raise_quit_exception)
 
-
     # Move to directory which contains this file
-    CURRENT_DIR_ABSPATH = os.path.abspath(os.path.dirname(__file__))
-    if os.path.isdir(CURRENT_DIR_ABSPATH):
-        os.chdir(CURRENT_DIR_ABSPATH)
-    else:
-        raise Exception("Cannot determine current path")
+    os.chdir(os.path.dirname(__file__))
 
+    # Create directories
+    if not os.path.exists(PATH_CACHE):
+        os.makedirs(PATH_CACHE)
+    if not os.path.exists(PATH_DOWNLOADS):
+        os.makedirs(PATH_DOWNLOADS)
 
-    # Create downloads directory
-    DOWNLOADS_DIR_ABSPATH = os.path.abspath(os.path.join(".cache", "downloads"))
-    if not os.path.exists(DOWNLOADS_DIR_ABSPATH):
-        os.makedirs(DOWNLOADS_DIR_ABSPATH)
-
-
+    # Create mods hash file if it doesn't already exist
     init_mod_hash_table()
 
 def init_mod_hash_table():
-    global CURRENT_DIR_ABSPATH
+    if not os.path.exists(PATH_MOD_HASHES):
+        table = dict()
+        mods_dir = os.path.join(get_minecraft_dir(), "mods")
 
-    _FILE = os.path.join(CURRENT_DIR_ABSPATH, ".cache", "mod-hashes.json")
-
-    table = dict()
-    mods_dir = os.path.join(get_minecraft_dir(), "mods")
-
-    if os.path.exists(_FILE):
-        with open(_FILE) as file:
-            table = json.load(file)
-    else:
         print("Initializing mods hash table... ", end="", flush=True)
+
         for mod in (f for f in os.listdir(mods_dir) if os.path.isfile(os.path.join(mods_dir, f))):
             with open(os.path.join(mods_dir, mod), "rb") as file:
                 table.update({mod: hashlib.sha256(file.read()).hexdigest()})
         
-        with open(_FILE, "w") as file:
+        with open(PATH_MOD_HASHES, "w") as file:
             file.write(json.dumps(table))
+
         print("Done")
-    
-    return table
 
 
 
@@ -230,8 +218,6 @@ def zip_mods(src_dir: str, dst: str):
         print("Successfully created", os.path.relpath(dst))
 
 def update_client_mods():
-    global MOD_PACK_ENDPOINT
-
     # Determine path to local .minecraft directory
     mods_dir_abspath = os.path.join(get_minecraft_dir(), "mods")
 
@@ -270,8 +256,6 @@ def update_client_mods():
     os.remove(new_mods_zip_abspath)
 
 def update_client_shaders():
-    global SHADER_PACK_ENDPOINT
-
     # Get path to local shaderpack dir
     shaderpacks_dir_abspath = os.path.join(get_minecraft_dir(), "shaderpacks")
 
@@ -287,8 +271,7 @@ def update_client_shaders():
     shutil.move(new_shaderpack_abspath, dest)
     
 def clear_cache():
-    downloads_dir = os.path.join(CURRENT_DIR_ABSPATH, ".cache")
-    shutil.rmtree(downloads_dir)
+    shutil.rmtree(PATH_CACHE)
 
 
 
@@ -317,12 +300,10 @@ def main():
     parser.add_argument("--clear-cache",
                         action="store_true",
                         help="Clear your local cache.")
-        
-    try:
-        args = vars(parser.parse_args())
-        # print(args)
-        # return
 
+    try:
+        # Parse args and setup
+        args = vars(parser.parse_args())
         if not any(args.values()) or args["help"]:
             parser.print_help()
             return
@@ -340,14 +321,14 @@ def main():
             clear_cache()
 
     except argparse.ArgumentError as e:
-        print(e)
+        print(red(e))
         parser.print_usage()
     
     except QuitException:
         print("Quitting...")
     
     except Exception as e:
-        print(f"\x1b[91m{e}\x1b[0m") # red message
+        print(red(e))
         # raise e
 
 if __name__ == "__main__":
