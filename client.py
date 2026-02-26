@@ -50,6 +50,12 @@ def signal_handler(*args, **kwargs):
 def red(s: str):
     return f"\x1b[91m{s}\x1b[0m"
 
+def green(s: str):
+    return f"\x1b[92m{s}\x1b[0m"
+
+def yellow(s: str):
+    return f"\x1b[93m{s}\x1b[0m"
+
 
 def ask_user(query: str,
              valid_responses: tuple[str] | None = None,
@@ -276,39 +282,38 @@ def zip_mods(src_dir: str, dst: str):
 
 def update_client_mods():
     # Download new mods
-    new_mods_zip_abspath = download_file(FILE_SERVER_ADDR + MOD_PACK_ENDPOINT, "mods.zip")
-    with zipfile.ZipFile(new_mods_zip_abspath) as zip:
-        new_mod_filenames = set(entry.filename for entry in zip.infolist())
+    new_mods_zip = download_file(FILE_SERVER_ADDR + MOD_PACK_ENDPOINT, "mods.zip")
+    with zipfile.ZipFile(new_mods_zip) as zip:
+        new_mods_filenames = set(entry.filename for entry in zip.infolist())
 
-    # Gather existing mod names
+    # Tally existing mods
     mods_dir = os.path.join(get_minecraft_dir(), "mods")
     existing_mods_filenames = set(f for f in os.listdir(mods_dir) if os.path.isfile(os.path.join(mods_dir, f)))
 
-    # If the user has mods which are not part of the new set, ask if they
-    # are OK with them being deleted. They will be lost forever.
-    existing_mods_filenames_lost = existing_mods_filenames - new_mod_filenames
-    if existing_mods_filenames_lost:
-        print("The following files will be deleted:")
-        for m in sorted(existing_mods_filenames_lost):
-            print(" ", m)
+    # Display which mods will be added (A), updated (U), and deleted (D).
+    # Ask user if they want to continue.
+    for m in sorted(new_mods_filenames - existing_mods_filenames):
+        print(" ", green("A:"), m)
+    for m in sorted(existing_mods_filenames & new_mods_filenames):
+        print(" ", yellow("U:"), m)
+    for m in sorted(existing_mods_filenames - new_mods_filenames):
+        print(" ", red("D:"), m)
 
-        if not ask_user_yes_no("Continue?"):
-            return
-    
-    # Remove existing mods
-    for filename in existing_mods_filenames:
-        os.remove(os.path.join(mods_dir, filename))
-    
-    # Extract new mods
-    print(f"Updating mods ({len(new_mod_filenames)})...")
-    with zipfile.ZipFile(new_mods_zip_abspath) as zip:
-        for item in zip.infolist():
-            print("  Installing", item.filename)
-            zip.extract(item, mods_dir)
-    print("Successfully updated mods")
+    if ask_user_yes_no("Continue?"):
+        # Remove existing mods
+        for filename in existing_mods_filenames:
+            os.remove(os.path.join(mods_dir, filename))
+        
+        # Extract new mods
+        print(f"Updating mods ({len(new_mods_filenames)})...")
+        with zipfile.ZipFile(new_mods_zip) as zip:
+            for item in zip.infolist():
+                print("  Installing", item.filename)
+                zip.extract(item, mods_dir)
+        print("Successfully updated mods")
 
-    # Delete downloaded zip
-    os.remove(new_mods_zip_abspath)
+        # Delete downloaded zip
+        # os.remove(new_mods_zip_abspath)
 
 def update_client_shaders():
     # Download shaderpack
@@ -319,6 +324,7 @@ def update_client_shaders():
     dest = os.path.join(shaderpacks_dir, SHADER_PACK_ENDPOINT)
     if ask_user_replace_file(dest):
         shutil.copyfile(shaderpack, dest)
+        print("Successfully installed shaderpack")
     
 def clear_cache():
     shutil.rmtree(PATH_CACHE)
