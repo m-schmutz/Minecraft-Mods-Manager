@@ -7,7 +7,6 @@ try:
     import hashlib
     import json
     import argparse
-    import shutil
 except ModuleNotFoundError as e:
     print("Python module not installed:", e)
     quit()
@@ -243,7 +242,7 @@ def zip_mods(src_dir: str, dst: str):
     if not os.path.isdir(src_dir):
         raise Exception(f"Directory does not exist: {os.path.relpath(src_dir)}")
     
-    # Validate directory form
+    # Validate directory form (can only contain .jar files)
     entries = os.listdir(src_dir)
     dirs = tuple(d for d in entries if os.path.isdir(os.path.join(src_dir, d)))
     files = tuple(f for f in entries if os.path.isfile(os.path.join(src_dir, f)))
@@ -320,6 +319,7 @@ def clear_cache():
 ### MAIN PROGRAM ###
 
 def main():
+    # Init command line parser
     parser = argparse.ArgumentParser(prog=__file__.rsplit(os.sep, maxsplit=1)[-1],
                                      add_help=False,
                                      exit_on_error=False)
@@ -362,11 +362,9 @@ def main():
     except argparse.ArgumentError as e:
         print(red(e))
         parser.print_usage()
-    
     except QuitException as e:
         print("Quitting...")
         # raise e
-    
     except Exception as e:
         print(red(e))
         # raise e
