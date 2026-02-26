@@ -1,3 +1,11 @@
+#################################################
+# client.py
+# 2026-02-25, Ryan Stachura
+#
+# Command line utility to manage local mods for
+# self-hosted Minecraft server.
+#################################################
+
 try:
     import os
     import signal
@@ -13,7 +21,7 @@ except ModuleNotFoundError as e:
 
 
 
-### CONSTANTS ###
+### CONSTANTS & GLOBALS ###
 
 FILE_SERVER_ADDR = "http://172.30.1.1:8000/files/"
 MOD_PACK_ENDPOINT       = "ModPack.zip"
@@ -24,12 +32,11 @@ PATH_CACHE      = ".cache"
 PATH_DOWNLOADS  = os.path.join(PATH_CACHE, "downloads")
 PATH_MOD_HASHES = os.path.join(PATH_CACHE, "mod-hashes.json")
 
+do_quit = False
+
 
 
 ### UTILS ###
-
-do_quit = False
-
 
 class QuitException(Exception):
     """So you want to quit the program, eh?"""
@@ -202,23 +209,22 @@ def zip_dir(src_dir: str, dst: str):
 
 ### PROGRAM ROUTINES ###
 
-def setup():
-    # Quit gracefully on Ctrl+C
-    signal.signal(signal.SIGINT, signal_handler)
+def _init_directories():
+    """Set CWD and create required directories"""
 
     # Move to directory which contains this file
     os.chdir(os.path.dirname(__file__))
 
-    # Create directories
+    # Create cache directories
     if not os.path.exists(PATH_CACHE):
         os.makedirs(PATH_CACHE)
+
     if not os.path.exists(PATH_DOWNLOADS):
         os.makedirs(PATH_DOWNLOADS)
 
-    # Create mods hash file if it doesn't already exist
-    init_mod_hash_table()
+def _init_mod_hash_table():
+    """Create mods hash file if it doesn't already exist"""
 
-def init_mod_hash_table():
     if not os.path.exists(PATH_MOD_HASHES):
         table = dict()
         mods_dir = os.path.join(get_minecraft_dir(), "mods")
@@ -234,6 +240,12 @@ def init_mod_hash_table():
 
         print("Done")
 
+def setup():
+    # Quit gracefully on Ctrl+C
+    signal.signal(signal.SIGINT, signal_handler)
+
+    _init_directories()
+    _init_mod_hash_table()
 
 
 def zip_mods(src_dir: str, dst: str):
@@ -310,9 +322,6 @@ def update_client_shaders():
     
 def clear_cache():
     shutil.rmtree(PATH_CACHE)
-
-
-
 
 
 
