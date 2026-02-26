@@ -29,15 +29,17 @@ PATH_MOD_HASHES = os.path.join(PATH_CACHE, "mod-hashes.json")
 
 ### UTILS ###
 
+do_quit = False
+
+
 class QuitException(Exception):
     """So you want to quit the program, eh?"""
     def __init__(self, *args):
         super().__init__(*args)
 
-def raise_quit_exception(*args, **kwargs):
-    """This takes any args to appease signal handling btw"""
-    raise QuitException()
-
+def signal_handler(*args, **kwargs):
+    global do_quit
+    do_quit = True
 
 def red(s: str):
     return f"\x1b[91m{s}\x1b[0m"
@@ -49,6 +51,8 @@ def ask_user(query: str,
              show_responses: bool = True,
              case_sensitive: bool = False,
              responses_delimeter: str = ","):
+    global do_quit
+
     if not isinstance(query ,str):
         raise TypeError("query must be a string")
     
@@ -62,9 +66,24 @@ def ask_user(query: str,
         raise TypeError("response_delimeter must be a string")
 
 
-    resp = None
+    # `input()` will throw an empty exception if SIGINT is caught by caller.
+    # This is because when SIGINT is caught by the caller, it prevents the
+    # default behavior of raising KeyboardInterrupt.
+    #
+    # Therefore, we use try-except blocks then check that our signal handler
+    # was called.
+    def _try_input(q) -> str:
+        global do_quit
+        try:
+            return input(q)
+        except Exception:
+            if do_quit:
+                raise QuitException()
+
+
+    resp = ""
     if valid_responses is None:    
-        resp = input(query)
+        resp = _try_input(query)
     else:
         for vr in valid_responses:
             if not isinstance(vr, str):
@@ -77,19 +96,18 @@ def ask_user(query: str,
             valid_responses = tuple(vr.lower() for vr in valid_responses)
 
         while resp not in valid_responses:
-            resp = input(query)
+            resp = _try_input(query)
             if not case_sensitive:
                 resp = resp.lower()
     
     return resp
 
 def ask_user_yes_no(query: str, **kwargs):
-    return ask_user(query, ("y","n"), **kwargs)
+    return "y" == ask_user(query, ("y","n"), **kwargs)
 
 def ask_user_replace_file(path: str):
     if os.path.exists(path):
-        if "n" == ask_user_yes_no(f"File \"{os.path.relpath(path)}\" already exists. Would you like to replace it?"):
-            return False
+        return ask_user_yes_no(f"File \"{os.path.relpath(path)}\" already exists. Would you like to replace it?")
     return True
 
 
@@ -100,28 +118,56 @@ def get_minecraft_dir():
     return dot_minecraft_dir_abspath
 
 def download_file(url: str, filename: str):
-    dest_abspath = os.path.join(PATH_DOWNLOADS, filename)
+    global do_quit
 
-    if ask_user_replace_file(dest_abspath):
-        did_timeout = False
+    chunk_size = 4096
+    hide_cursor = "\x1b[?25l"
+    show_cursor = "\x1b[?25h"
+    move_cursor_left_fmt = "\x1b[{:d}D"
 
-        print("Downloading", url)
+    dest = os.path.join(PATH_DOWNLOADS, filename)
+    if ask_user_replace_file(dest):
+        # This will hide the cursor.
+        print(f"Downloading {url}... ", end=hide_cursor, flush=True)
+
+        # We want to reveal the cursor before raising an exception, so we make
+        # sure to catch any exception that may occur and raise it afterwards.
+        local_exception = None
         try:
-            resp = requests.get(url, timeout=10)
+            with requests.get(url, timeout=5.0, stream=True) as resp_stream:
+                if resp_stream.status_code != 200:
+                    raise Exception(f"Failed ({resp_stream.status_code}, {resp_stream.reason})")
+
+                file_size = int(resp_stream.headers.get("Content-Length", -1))
+                if file_size == -1:
+                    raise Exception("Could not determine file size")
+            
+                with open(dest, "wb") as f:
+                    n_read = 0
+                    for data in resp_stream.iter_content(chunk_size):
+                        if do_quit:
+                            raise QuitException()
+
+                        n_read += f.write(data)
+                        percent: str = "{:.2f}%".format(100 * n_read/file_size)
+                        move_cursor_left: str = move_cursor_left_fmt.format(len(percent))
+                        print(percent, end=move_cursor_left, flush=True)
+
         except requests.ConnectTimeout:
-            did_timeout = True
-        
-        if did_timeout:
-            raise Exception("Timeout. Is your VPN connected?")
-        elif resp.status_code != 200:
-            raise Exception(f"Failed to download {url} ({resp.status_code}, {resp.reason})")
-        
-        with open(dest_abspath, "wb") as file:
-            file.write(resp.content)
+            local_exception = Exception("Timeout. Is your VPN connected?")
+        except QuitException as e:
+            print(red("Cancelled"), end="")
+            os.remove(dest)
+            local_exception = e
+        except Exception as e:
+            local_exception = e
+
+        # Reveal the cursor then handle exceptions.
+        print(show_cursor)
+        if local_exception is not None:
+            raise local_exception
     
-        print("Successfully downloaded", os.path.relpath(dest_abspath))
-    
-    return dest_abspath
+    return dest
 
 def zip_dir(src_dir: str, dst: str):
     if not isinstance(src_dir, str):
@@ -159,7 +205,7 @@ def zip_dir(src_dir: str, dst: str):
 
 def setup():
     # Quit gracefully on Ctrl+C
-    signal.signal(signal.SIGINT, raise_quit_exception)
+    signal.signal(signal.SIGINT, signal_handler)
 
     # Move to directory which contains this file
     os.chdir(os.path.dirname(__file__))
@@ -218,57 +264,50 @@ def zip_mods(src_dir: str, dst: str):
         print("Successfully created", os.path.relpath(dst))
 
 def update_client_mods():
-    # Determine path to local .minecraft directory
-    mods_dir_abspath = os.path.join(get_minecraft_dir(), "mods")
-
     # Download new mods
     new_mods_zip_abspath = download_file(FILE_SERVER_ADDR + MOD_PACK_ENDPOINT, "mods.zip")
     with zipfile.ZipFile(new_mods_zip_abspath) as zip:
         new_mod_filenames = set(entry.filename for entry in zip.infolist())
 
     # Gather existing mod names
-    existing_mod_filenames = set(f for f in os.listdir(mods_dir_abspath) if os.path.isfile(os.path.join(mods_dir_abspath, f)))
+    mods_dir = os.path.join(get_minecraft_dir(), "mods")
+    existing_mods_filenames = set(f for f in os.listdir(mods_dir) if os.path.isfile(os.path.join(mods_dir, f)))
 
     # If the user has mods which are not part of the new set, ask if they
     # are OK with them being deleted. They will be lost forever.
-    existing_mod_filenames_lost = existing_mod_filenames - new_mod_filenames
-    if existing_mod_filenames_lost:
+    existing_mods_filenames_lost = existing_mods_filenames - new_mod_filenames
+    if existing_mods_filenames_lost:
         print("The following files will be deleted:")
-        for m in sorted(existing_mod_filenames_lost):
+        for m in sorted(existing_mods_filenames_lost):
             print(" ", m)
 
-        if "n" == ask_user_yes_no("Continue?"):
+        if not ask_user_yes_no("Continue?"):
             return
     
     # Remove existing mods
-    for filename in existing_mod_filenames:
-        os.remove(os.path.join(mods_dir_abspath, filename))
+    for filename in existing_mods_filenames:
+        os.remove(os.path.join(mods_dir, filename))
     
     # Extract new mods
     print(f"Updating mods ({len(new_mod_filenames)})...")
     with zipfile.ZipFile(new_mods_zip_abspath) as zip:
         for item in zip.infolist():
             print("  Installing", item.filename)
-            zip.extract(item, mods_dir_abspath)
+            zip.extract(item, mods_dir)
     print("Successfully updated mods")
 
     # Delete downloaded zip
     os.remove(new_mods_zip_abspath)
 
 def update_client_shaders():
-    # Get path to local shaderpack dir
-    shaderpacks_dir_abspath = os.path.join(get_minecraft_dir(), "shaderpacks")
-
     # Download shaderpack
-    new_shaderpack_abspath = download_file(FILE_SERVER_ADDR + SHADER_PACK_ENDPOINT, SHADER_PACK_ENDPOINT)
+    shaderpack = download_file(FILE_SERVER_ADDR + SHADER_PACK_ENDPOINT, SHADER_PACK_ENDPOINT)
 
     # Install/replace the shaderpack
-    dest = os.path.join(shaderpacks_dir_abspath, SHADER_PACK_ENDPOINT)
-    if os.path.exists(dest):
-        if "n" == ask_user_replace_file(dest):
-            return
-    
-    shutil.move(new_shaderpack_abspath, dest)
+    shaderpacks_dir = os.path.join(get_minecraft_dir(), "shaderpacks")
+    dest = os.path.join(shaderpacks_dir, SHADER_PACK_ENDPOINT)
+    if ask_user_replace_file(dest):
+        shutil.copyfile(shaderpack, dest)
     
 def clear_cache():
     shutil.rmtree(PATH_CACHE)
@@ -324,8 +363,9 @@ def main():
         print(red(e))
         parser.print_usage()
     
-    except QuitException:
+    except QuitException as e:
         print("Quitting...")
+        # raise e
     
     except Exception as e:
         print(red(e))
