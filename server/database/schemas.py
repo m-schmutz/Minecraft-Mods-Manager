@@ -8,7 +8,7 @@ class ModsTable(StrEnum):
     '''\'Mods\' Table Information'''
     TABLE_NAME = 'Mods'
     ID = 'id'
-    DISPLAY_NAME = 'display_name'
+    NAME = 'name'
     DESCRIPTION = 'description'
     VERSION = 'version'
     FILENAME = 'filename'

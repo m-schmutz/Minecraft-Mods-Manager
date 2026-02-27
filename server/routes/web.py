@@ -45,7 +45,7 @@ def add_mod_page():
         return render_template('403.html'), 403
     return render_template(
         'add-mod.html',
-        name_col=ModsTable.DISPLAY_NAME,
+        name_col=ModsTable.NAME,
         desc_col=ModsTable.DESCRIPTION,
         version_col=ModsTable.VERSION,
         link_col=ModsTable.LINK,
