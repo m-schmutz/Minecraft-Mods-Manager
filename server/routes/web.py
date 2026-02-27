@@ -49,9 +49,8 @@ def add_mod_page():
         desc_col=ModsTable.DESCRIPTION,
         version_col=ModsTable.VERSION,
         link_col=ModsTable.LINK,
-        type_col=ModsTable.MOD_TYPE,
-        role_col=ModsTable.MOD_ROLE,
-        file_col=ModsTable.MOD_FILE,
+        type_col=ModsTable.TYPE,
+        role_col=ModsTable.ROLE,
         types=[TypeValues.FEATURE, TypeValues.LIBRARY],
         roles=[RoleValues.BOTH, RoleValues.CLIENT, RoleValues.SERVER]
     )
