@@ -38,7 +38,7 @@ do_quit = False
 
 ### UTILS ###
 
-class QuitException(Exception):
+class QuitProgram(Exception):
     """So you want to quit the program, eh?"""
     def __init__(self, *args):
         super().__init__(*args)
@@ -46,6 +46,7 @@ class QuitException(Exception):
 def signal_handler(*args, **kwargs):
     global do_quit
     do_quit = True
+
 
 def red(s: str):
     return f"\x1b[91m{s}\x1b[0m"
@@ -90,7 +91,7 @@ def ask_user(query: str,
             return input(q)
         except Exception:
             if do_quit:
-                raise QuitException()
+                raise QuitProgram()
 
 
     resp = ""
@@ -158,7 +159,7 @@ def download_file(url: str, filename: str):
                     n_read = 0
                     for data in resp_stream.iter_content(chunk_size):
                         if do_quit:
-                            raise QuitException()
+                            raise QuitProgram()
 
                         n_read += f.write(data)
                         percent: str = "{:.2f}%".format(100 * n_read/file_size)
@@ -167,7 +168,7 @@ def download_file(url: str, filename: str):
 
         except requests.ConnectTimeout:
             local_exception = Exception("Timeout. Is your VPN connected?")
-        except QuitException as e:
+        except QuitProgram as e:
             print(red("Cancelled"), end="")
             os.remove(dest)
             local_exception = e
@@ -212,6 +213,17 @@ def zip_dir(src_dir: str, dst: str):
     return False
 
 
+def send_mod_hashes(url: str):
+    data = _init_mod_hash_table()
+    try:
+        resp = requests.post(url, json=data)
+    except Exception as e:
+        raise e
+
+    if resp.status_code != 200:
+        raise Exception("Failed to post data")
+
+
 
 ### PROGRAM ROUTINES ###
 
@@ -231,8 +243,9 @@ def _init_directories():
 def _init_mod_hash_table():
     """Create mods hash file if it doesn't already exist"""
 
+    table = dict()
+
     if not os.path.exists(PATH_MOD_HASHES):
-        table = dict()
         mods_dir = os.path.join(get_minecraft_dir(), "mods")
 
         print("Initializing mods hash table... ", end="", flush=True)
@@ -245,6 +258,11 @@ def _init_mod_hash_table():
             file.write(json.dumps(table))
 
         print("Done")
+    else:
+        with open(PATH_MOD_HASHES, "r") as file:
+            table = json.loads(file.read())
+
+    return table
 
 def setup():
     # Quit gracefully on Ctrl+C
@@ -377,7 +395,7 @@ def main():
     except argparse.ArgumentError as e:
         print(red(e))
         parser.print_usage()
-    except QuitException as e:
+    except QuitProgram as e:
         print("Quitting...")
         # raise e
     except Exception as e:
