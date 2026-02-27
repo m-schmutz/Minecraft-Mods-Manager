@@ -15,6 +15,7 @@ try:
     import hashlib
     import json
     import argparse
+    from progress_bar import ProgressBar
 except ModuleNotFoundError as e:
     print("Python module not installed:", e)
     quit()
@@ -134,18 +135,10 @@ def download_file(url: str, filename: str):
     global do_quit
 
     chunk_size = 4096
-    hide_cursor = "\x1b[?25l"
-    show_cursor = "\x1b[?25h"
-    move_cursor_left_fmt = "\x1b[{:d}D"
-
     dest = os.path.join(PATH_DOWNLOADS, filename)
-    if ask_user_replace_file(dest):
-        # This will hide the cursor.
-        print(f"Downloading {url}... ", end=hide_cursor, flush=True)
 
-        # We want to reveal the cursor before raising an exception, so we make
-        # sure to catch any exception that may occur and raise it afterwards.
-        local_exception = None
+    if ask_user_replace_file(dest):
+        print(f"Downloading {url}...")
         try:
             with requests.get(url, timeout=5.0, stream=True) as resp_stream:
                 if resp_stream.status_code != 200:
@@ -155,30 +148,21 @@ def download_file(url: str, filename: str):
                 if file_size == -1:
                     raise Exception("Could not determine file size")
             
-                with open(dest, "wb") as f:
-                    n_read = 0
-                    for data in resp_stream.iter_content(chunk_size):
-                        if do_quit:
-                            raise QuitProgram()
+                with ProgressBar(file_size, width=30) as bar:
+                    with open(dest, "wb") as f:
+                        n_read = 0
+                        for data in resp_stream.iter_content(chunk_size):
+                            if do_quit:
+                                print(red(" (Cancelled)"), end="")
+                                f.close()
+                                os.remove(dest)
+                                raise QuitProgram()
 
-                        n_read += f.write(data)
-                        percent: str = "{:.2f}%".format(100 * n_read/file_size)
-                        move_cursor_left: str = move_cursor_left_fmt.format(len(percent))
-                        print(percent, end=move_cursor_left, flush=True)
+                            n_read += f.write(data)
+                            bar.update(n_read)
 
         except requests.ConnectTimeout:
-            local_exception = Exception("Timeout. Is your VPN connected?")
-        except QuitProgram as e:
-            print(red("Cancelled"), end="")
-            os.remove(dest)
-            local_exception = e
-        except Exception as e:
-            local_exception = e
-
-        # Reveal the cursor then handle exceptions.
-        print(show_cursor)
-        if local_exception is not None:
-            raise local_exception
+            raise Exception("Timeout. Is your VPN connected?")
     
     return dest
 
@@ -309,11 +293,11 @@ def update_client_mods():
     existing_mods_filenames = set(f for f in os.listdir(mods_dir) if os.path.isfile(os.path.join(mods_dir, f)))
 
     # Display which mods will be added (A), updated (U), and deleted (D).
-    # Ask user if they want to continue.
-    for m in sorted(new_mods_filenames - existing_mods_filenames):
-        print(" ", green("A:"), m)
-    for m in sorted(existing_mods_filenames & new_mods_filenames):
-        print(" ", yellow("U:"), m)
+    # Then ask the user if they want to continue.
+    # for m in sorted(new_mods_filenames - existing_mods_filenames):
+    #     print(" ", green("A:"), m)
+    # for m in sorted(existing_mods_filenames & new_mods_filenames):
+    #     print(" ", yellow("U:"), m)
     for m in sorted(existing_mods_filenames - new_mods_filenames):
         print(" ", red("D:"), m)
 
