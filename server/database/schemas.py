@@ -11,11 +11,11 @@ class ModsTable(StrEnum):
     DISPLAY_NAME = 'display_name'
     DESCRIPTION = 'description'
     VERSION = 'version'
-    MOD_FILE = 'mod_file'
+    FILENAME = 'filename'
     FILEHASH = 'filehash'
     LINK = 'link'
-    MOD_TYPE = 'mod_type'
-    MOD_ROLE = 'mod_role'
+    TYPE = 'type'
+    ROLE = 'role'
 
 
 class TypeValues(StrEnum):
