@@ -37,6 +37,7 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?);
 
 SELECT_MODS_INFO = f'''
 SELECT
+{ModsTable.ID},
 {ModsTable.NAME}, 
 {ModsTable.DESCRIPTION}, 
 {ModsTable.VERSION}, 
