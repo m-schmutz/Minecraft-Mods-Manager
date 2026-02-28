@@ -21,7 +21,13 @@ VALID_ROLE_VALUES = {RoleValues.BOTH, RoleValues.SERVER, RoleValues.CLIENT}
 
 def calc_hash(stream: BinaryIO) -> str:
     '''Hash the contents of a file and return its hex digest using HASH_FUNCTION'''
+    # calculate hash
     digest = file_digest(stream, sha256)
+    
+    # reset to begin of file
+    stream.seek(0)
+
+    # return as a hex digest
     return digest.hexdigest()
 
 
@@ -49,8 +55,6 @@ def check_upload_file(filesContainer: ImmutableMultiDict[str, FileStorage]) -> t
         raise ValueError('Filename cannot have any spaces')
 
     filehash = calc_hash(file.stream)
-
-    file.stream.seek(0)
     
     return file, secure_filename(file.filename), filehash
 

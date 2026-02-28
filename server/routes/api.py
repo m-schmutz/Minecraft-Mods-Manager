@@ -27,9 +27,11 @@ def send_mod_loader():
 @api_bp.route('/info/mod-display-list', methods=['GET'])
 def get_mod_list():
     '''Send json display info about the currently installed mods'''
-    with open('/home/msch/Projects/Minecraft-Mods-Manager/mod-list.json', 'r') as f:
-        data = load(f)
-    return jsonify(data)
+    
+    with DBConnection() as db:
+        mods_info = db.get_mods_info()
+
+    return jsonify(mods_info)
 
 
 @api_bp.route('/admin/add-mod', methods=['POST'])
@@ -37,7 +39,6 @@ def add_mod():
     if check_remote_ip(request.remote_addr):
         return jsonify({'error': "IP not authorized"}), 403
     
-
     str_values = check_form_data(request.form)
 
     file, filename, filehash = check_upload_file(request.files)

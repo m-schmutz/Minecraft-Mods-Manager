@@ -11,7 +11,7 @@ async function loadAdminModList() {
         card.className = "admin-mod-card";
 
         card.innerHTML = `
-    <h3>${mod.display_name} <small>v${mod.version}</small></h3>
+    <h3>${mod.name} <small>v${mod.version}</small></h3>
     <p>${mod.description}</p>
     <p><strong>Type:</strong> ${mod.type}</p>
     <p><strong>Role:</strong> ${mod.role}</p>

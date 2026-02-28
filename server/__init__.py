@@ -15,7 +15,7 @@ def create_app() -> Flask:
     )
 
     # import route blueprints
-    from .routes import api_bp, web_bp
+    from server.routes import api_bp, web_bp
 
     # register blueprints
     app.register_blueprint(web_bp)

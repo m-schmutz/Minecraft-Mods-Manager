@@ -1,4 +1,4 @@
-from sqlite3 import connect, Connection
+from sqlite3 import connect, Connection, Row
 from server.config import DB_PATH
 from server.database import FOREIGN_KEYS, INIT_TABLES
 from server.database.sql import INSERT_MOD, SELECT_MODS_INFO
@@ -62,11 +62,20 @@ class DBConnection:
         cursor.close()
 
 
-    def get_mods_info(self):
+    def get_mods_info(self) -> dict:
+        
+        self.conn.row_factory = Row
         cursor = self.conn.cursor()
 
         cursor.execute(SELECT_MODS_INFO)
 
-        mods = cursor.fetchall()
+        mods = [dict(row) for row in cursor.fetchall()]
 
-        print(mods)
+        for mod in mods:
+            mod['dependancies'] = []
+
+        info_list = {'mod-list': mods}
+
+        return info_list
+        
+    

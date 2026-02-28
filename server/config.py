@@ -2,10 +2,10 @@
 
 
 # mods directory for the server 
-SERVER_MODS_DIR = None
+SERVER_MODS_DIR = '/home/msch/Projects/Minecraft-Mods-Manager/sandbox/mods'
 
 # directory for holding client-specific mods
-CLIENT_MODS_DIR = None
+CLIENT_MODS_DIR = '/home/msch/Projects/Minecraft-Mods-Manager/sandbox/client_mods'
 
 # directory for holding temp files
 TEMP_DIR = None
@@ -15,7 +15,7 @@ TEMP_DIR = None
 
 
 # path to where sqlite database file should be located
-DB_PATH = None
+DB_PATH = '/home/msch/Projects/Minecraft-Mods-Manager/sandbox/db/database.sqlite'
 
 # path to minecraft installer
 MOD_LOADER_PATH = None
