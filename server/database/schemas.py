@@ -1,3 +1,6 @@
+############ Python Lib Imports ############
+
+
 from enum import StrEnum
 
 
@@ -31,13 +34,12 @@ class RoleValues(StrEnum):
     BOTH = 'Client/Server'
 
 
-############ Dependancies Table ############
+############ Dependencies Table ############
 
 
 class DepsTable(StrEnum):
-    '''\'Dependancies\' Table Information'''
-    TABLE_NAME = 'Dependancies'
-    ID = 'id'
+    '''\'Dependencies\' Table Information'''
+    TABLE_NAME = 'Dependencies'
     MOD_ID = 'mod_id'
     DEP_ID = 'dep_id'
 

@@ -1,9 +1,18 @@
-from .schemas import ModsTable
+############ Local Imports ############
 
-# enforce foreign keys
+
+from .schemas import ModsTable, DepsTable
+
+
+############ FOREIGN KEYS SQL ############
+
+
 FOREIGN_KEYS = 'PRAGMA foreign_keys = ON;'
 
-# sql script to create tables if they do not exist
+
+############ Tables SQL ############
+
+
 INIT_TABLES = f'''
 CREATE TABLE IF NOT EXISTS {ModsTable.TABLE_NAME} (
     {ModsTable.ID} INTEGER PRIMARY KEY,
@@ -16,9 +25,25 @@ CREATE TABLE IF NOT EXISTS {ModsTable.TABLE_NAME} (
     {ModsTable.TYPE} TEXT NOT NULL CHECK (type IN ('Feature', 'Library')),
     {ModsTable.ROLE} TEXT NOT NULL CHECK (role IN ('Server', 'Client', 'Client/Server'))
 ) STRICT; 
+
+CREATE TABLE IF NOT EXISTS {DepsTable.TABLE_NAME} (
+    {DepsTable.MOD_ID} INTEGER NOT NULL,
+    {DepsTable.DEP_ID} INTEGER NOT NULL,
+
+    FOREIGN KEY ({DepsTable.MOD_ID})
+        REFERENCES {ModsTable.TABLE_NAME}({ModsTable.ID})
+        ON DELETE CASCADE,
+
+    FOREIGN KEY ({DepsTable.DEP_ID})
+        REFERENCES {ModsTable.TABLE_NAME}({ModsTable.ID})
+        ON DELETE RESTRICT,
+
+    PRIMARY KEY ({DepsTable.MOD_ID}, {DepsTable.DEP_ID})
+) STRICT;
 '''
 
 
+############ Insert SQL ############
 
 
 INSERT_MOD = f'''
@@ -35,6 +60,9 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?);
 '''
 
 
+############ Select SQL ############
+
+
 SELECT_MODS_INFO = f'''
 SELECT
 {ModsTable.ID},
@@ -45,4 +73,12 @@ SELECT
 {ModsTable.TYPE}, 
 {ModsTable.ROLE}
 FROM {ModsTable.TABLE_NAME};
+'''
+
+
+SELECT_MOD_DEPENDENCIES = f'''
+SELECT {ModsTable.NAME}
+FROM {DepsTable.TABLE_NAME}
+JOIN {ModsTable.TABLE_NAME} on {ModsTable.TABLE_NAME}.{ModsTable.ID} = {DepsTable.DEP_ID}
+WHERE {DepsTable.MOD_ID} = ?;
 '''
