@@ -78,4 +78,3 @@ class DBConnection:
 
         return info_list
         
-    

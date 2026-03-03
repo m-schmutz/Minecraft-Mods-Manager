@@ -4,7 +4,7 @@ from server.config import MC_MODLOADER, MC_VERSION, MC_DIFFICULTY
 from server.database.schemas import RoleValues, TypeValues, ModsTable
 
 
-# web related blueprints
+# web related blueprint
 web_bp = Blueprint('web', __name__)
 
 

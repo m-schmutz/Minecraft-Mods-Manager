@@ -34,6 +34,17 @@ def get_mod_list():
     return jsonify(mods_info)
 
 
+@api_bp.route('/client-check', methods=['POST'])
+def client_check():
+    '''Check the mods on the client and their content for updates'''
+    # get json list from client
+    # check which mods do not exist on the server
+
+
+
+
+
+
 @api_bp.route('/admin/add-mod', methods=['POST'])
 def add_mod():
     if check_remote_ip(request.remote_addr):
