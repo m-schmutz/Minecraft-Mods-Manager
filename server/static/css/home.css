@@ -1,0 +1,137 @@
+/* Global layout */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+    background-color: #121212;
+    color: #e0e0e0;
+}
+
+/* Page title */
+h1 {
+    text-align: center;
+    margin-top: 25px;
+    margin-bottom: 15px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+/* Server info block */
+.server-info {
+    background: #1e1e1e;
+    padding: 20px;
+    margin: 20px auto;
+    width: 80%;
+    border-radius: 8px;
+    box-shadow: 0 0 10px #00000055;
+}
+
+/* Download button */
+.download-section {
+    width: 80%;
+    margin: 0 auto 30px auto;
+    text-align: left;
+}
+
+.download-section a {
+    display: inline-block;
+    background: #3a7afe;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background 0.2s ease;
+}
+
+.download-section a:hover {
+    background: #2f63d1;
+}
+
+/* Mod grid layout */
+.mod-grid {
+    width: 80%;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+}
+
+/* Individual mod card */
+.mod-card {
+    background: #1e1e1e;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px #00000055;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mod-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 15px #00000088;
+}
+
+.mod-card h3 {
+    margin-top: 0;
+    color: #ffffff;
+}
+
+.mod-card small {
+    color: #bbbbbb;
+}
+
+.mod-card a {
+    color: #4da3ff;
+    text-decoration: none;
+}
+
+.mod-card a:hover {
+    text-decoration: underline;
+}
+
+/* Dependencies list */
+.deps {
+    margin-left: 20px;
+    color: #cccccc;
+}
+
+.sort-controls {
+    width: 80%;
+    margin: 0 auto 20px auto;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.sort-controls select {
+    background: #1e1e1e;
+    color: #e0e0e0;
+    border: 1px solid #333;
+    padding: 6px 10px;
+    border-radius: 5px;
+}
+
+.sort-controls label {
+    font-size: 14px;
+    color: #cccccc;
+}
+
+.admin-button {
+    width: 80%;
+    margin: 10px auto 20px auto;
+    text-align: right;
+}
+
+.admin-button a {
+    background: #ff5555;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background 0.2s ease;
+}
+
+.admin-button a:hover {
+    background: #cc4444;
+}
