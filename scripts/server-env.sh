@@ -25,4 +25,4 @@ pip3 install --upgrade pip -q
 
 # update environment with packages in requirements.txt
 echo "Installing pip requirements"
-pip3 install -r lib/server-requirements.txt -q
+pip3 install -r server-requirements.txt -q
