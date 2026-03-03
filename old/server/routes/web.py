@@ -54,3 +54,4 @@ def add_mod_page():
         types=[TypeValues.FEATURE, TypeValues.LIBRARY],
         roles=[RoleValues.BOTH, RoleValues.CLIENT, RoleValues.SERVER]
     )
+

@@ -1,9 +1,9 @@
 let allMods = [];
 
 async function loadModList() {
-    const res = await fetch("/api/info/mod-display-list");
+    const res = await fetch("/api/info/mods");
     const data = await res.json();
-    allMods = data["mod-list"];
+    allMods = data["mods"];
 
     renderModList(allMods);
 }
@@ -24,8 +24,8 @@ function renderModList(mods) {
             <p><strong>Link:</strong> <a href="${mod.link}" target="_blank">CurseForge Page</a></p>
             <p><strong>Dependencies:</strong></p>
             <ul class="deps">
-                ${mod.dependancies.length > 0
-                    ? mod.dependancies.map(d => `<li>${d}</li>`).join("")
+                ${mod.dependencies.length > 0
+                    ? mod.dependencies.map(d => `<li>${d}</li>`).join("")
                     : "<li>None</li>"
                 }
             </ul>

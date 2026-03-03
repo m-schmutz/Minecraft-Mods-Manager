@@ -1,7 +1,7 @@
 async function loadAdminModList() {
-    const res = await fetch("/api/info/mod-display-list");
+    const res = await fetch("/api/info/mods");
     const data = await res.json();
-    const mods = data["mod-list"];
+    const mods = data["mods"];
 
     const container = document.getElementById("admin-mod-list");
     container.innerHTML = "";
@@ -18,13 +18,13 @@ async function loadAdminModList() {
 
     <p><strong>Dependencies:</strong></p>
     <ul class="deps">
-        ${mod.dependancies.length > 0
-                ? mod.dependancies.map(d => `<li>${d}</li>`).join("")
+        ${mod.dependencies.length > 0
+                ? mod.dependencies.map(d => `<li>${d}</li>`).join("")
                 : "<li>None</li>"
             }
     </ul>
 
-    <button class="update-btn" data-mod="${mod.id}">Update</button>
+    <button class="edit-btn" data-mod="${mod.id}">Edit</button>
     <button class="delete-btn" data-mod="${mod.id}">Delete</button>
 `;
 
@@ -37,6 +37,18 @@ async function loadAdminModList() {
 document.getElementById("add-mod-btn").onclick = () => {
     window.location.href = "/admin/add-mod";
 };
+
+
+document.addEventListener("click", e => {
+    if (e.target.classList.contains("edit-btn")) {
+        const id = e.target.dataset.mod;
+        window.location.href = `/admin/edit-mod?id=${id}`;
+    }
+});
+
+
+
+
 
 
 loadAdminModList();

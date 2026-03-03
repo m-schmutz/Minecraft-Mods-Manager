@@ -5,6 +5,7 @@ from werkzeug.datastructures import FileStorage, ImmutableMultiDict
 from werkzeug.utils import secure_filename
 from server.database.schemas import ModsTable, TypeValues, RoleValues
 from os.path import join
+from flask import Request
 
 
 FORM_STR_KEYS = [
