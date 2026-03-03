@@ -3,3 +3,6 @@ __pycache__/
 sandbox/
 mod-list.json
 test.py
+.venv/
+.cache/
+__pycache__/
