@@ -1,11 +1,11 @@
-############ Python Lib Imports ############
-
+#################################################################
+# Python Lib Imports 
 
 from enum import StrEnum
 
 
-############ Mods Table ############
-
+#################################################################
+# Mods table schemas
 
 class ModsTable(StrEnum):
     '''\'Mods\' Table Information'''
@@ -34,8 +34,8 @@ class RoleValues(StrEnum):
     BOTH = 'Client/Server'
 
 
-############ Dependencies Table ############
-
+#################################################################
+# Dependencies table schema
 
 class DepsTable(StrEnum):
     '''\'Dependencies\' Table Information'''
@@ -43,3 +43,12 @@ class DepsTable(StrEnum):
     MOD_ID = 'mod_id'
     DEP_ID = 'dep_id'
 
+
+#################################################################
+# Temporary check table schema
+
+class ClientMods(StrEnum):
+    '''Temp \'ClientMods\' Table Information'''
+    TABLE_NAME = 'ClientMods'
+    FILENAME = 'filename'
+    FILEHASH = 'filehash'

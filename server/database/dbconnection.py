@@ -1,29 +1,35 @@
-############ Python Lib Imports ############
-
+#################################################################
+# Python Lib Imports 
 
 from sqlite3 import connect, Connection, Row
 
 
-############ Project Imports ############
-
+#################################################################
+# Server Imports
 
 from server.config import DB_PATH
 
 
-############ Local Imports ############
+#################################################################
+# Local Imports
+
+from .sql import FOREIGN_KEYS, INIT_TABLES, TEMP_CHECK_TABLE
+from .sql import INSERT_MOD, INSERT_DEPENDENCY, INSERT_CLIENT_MODS
+from .sql import SELECT_ALL_MODS, SELECT_ONE_MOD, SELECT_MOD_DEPENDENCIES, SELECT_CLIENT_DOWNLOADS, SELECT_CLIENT_DELETES, SELECT_CLIENT_CURRENT
 
 
-from .sql import FOREIGN_KEYS, INIT_TABLES, INSERT_MOD, SELECT_MODS_INFO, SELECT_MOD_DEPENDENCIES
-from .schemas import ModsTable, DepsTable
-
-
-############ DBConnection Class ############
-
+#################################################################
+# DBConnection Class
 
 class DBConnection:
-    def __init__(self):
+    '''Manages connection to database defined by DB_PATH config'''
+
+    def __init__(self, tempTable: bool = False):
         # set connection to None so that context manager handles creating connection
         self.conn: Connection | None = None
+
+        # set if temp table should be created
+        self.tempTable = tempTable
 
 
     def __enter__(self):
@@ -35,6 +41,10 @@ class DBConnection:
 
         # initialize tables if they do not exist
         self.conn.executescript(INIT_TABLES)
+
+        # if temporary table is requested, create
+        if self.tempTable:
+            self.conn.execute(TEMP_CHECK_TABLE)
 
         # commit changes
         self.conn.commit()
@@ -57,53 +67,221 @@ class DBConnection:
         self.conn.close()
         self.conn = None
 
+    
+    def insert_mod(self, insert_params: tuple[str, str, str, str, str, str, str, str]) -> None:
+        '''
+        Inserts a new mod row into the 'Mods' table.
 
-    def select_mods_info(self):
-        # create cursor
+        `insert_params` tuple must supply the parameters in the following order:
+
+        (name, description, version, filename, filehash, link, type, role)
+        '''
+        # create cursor for transaction
         cursor = self.conn.cursor()
 
-        # set row factory to export values with column names
-        cursor.row_factory = Row
-
-        # execute select sql
-        cursor.execute(SELECT_MODS_INFO)
-
-        # convert every row into a dictionary
-        mods = [dict(row) for row in cursor.fetchall()]
-
-        # deactivate row factory
-        cursor.row_factory = None
-
-        # go through each mod returned and get dependencies
-        for mod in mods:
-            # get the mod ID
-            mod_id = int(mod[ModsTable.ID])
-
-            # get the dependencies
-            cursor.execute(SELECT_MOD_DEPENDENCIES, (mod_id,))
-            
-            # get list of dependancy names
-            dep_select = cursor.fetchall()
-
-            # convert to list of strings assign to 'dependencies
-            mod[DepsTable.TABLE_NAME.lower()] = [dep[0] for dep in dep_select]
-
-        # close the cursor
-        cursor.close()
-
-        # give list of mods a key value
-        info_list = {'mods-list': mods}
-
-        # return as dictionary
-        return info_list
-
-
-    def insert_mod(self, insert_params: tuple):
-        # create cursor
-        cursor = self.conn.cursor()
-
-        # insert mod into the database
+        # insert the mod into the database
         cursor.execute(INSERT_MOD, insert_params)
 
         # close the cursor
         cursor.close()
+
+
+    def insert_dependencies(self, insert_params: list[tuple[int, int]]):
+        '''
+        Inserts a list of dependancies into the 'Dependencies' table.
+
+        `insert_params` list must contain tuples of ints in the following order
+
+        [(mod_id, dependency_id)]
+        '''
+        # create cursor for transaction
+        cursor = self.conn.cursor()
+
+        # insert all dependencies into the database
+        cursor.executemany(INSERT_DEPENDENCY, insert_params)
+
+        # close the cursor
+        cursor.close()
+
+
+    def insert_client_mods(self, insert_params: list[tuple[str, str]]):
+        '''
+        Inserts a list of client mods into the 'ClientMods' temp table
+
+        `insert_params` list must contain tuples of strings in the following format:
+
+        [(filename, filehash), ...]
+        '''
+        # create cursor
+        cursor = self.conn.cursor()
+
+        # insert client list
+        cursor.executemany(INSERT_CLIENT_MODS, insert_params)
+
+        # close the cursor
+        cursor.close()
+
+
+    def select_all_mods(self) -> list[dict[str, str|int]]:
+        '''
+        Selects all columns from the 'Mods' table and returns them as a dictionary.
+
+        Data is returned in the following format::
+
+            [
+                {
+                    "id": int,
+                    "name": str,
+                    "description": str,
+                    "version": str,
+                    "filename": str,
+                    "filehash": str,
+                    "link": str,
+                    "type": str,
+                    "role": str
+                }
+            ]
+        '''
+        # create cursor
+        cursor = self.conn.cursor()
+
+        # use row factory so that values are returned with their corresponding column name
+        cursor.row_factory = Row
+
+        # select all rows in the Mods table
+        cursor.execute(SELECT_ALL_MODS)
+
+        # format returned rows as a list of dictionaries mapping column names to values
+        allMods: list[dict[str, str|int]] = [dict(row) for row in cursor.fetchall()]
+
+        # close the cursor
+        cursor.close()
+
+        # return the list
+        return allMods
+        
+
+    def select_single_mod(self, modId: int) -> dict[str, str|int]:
+        '''
+        Selects all columns for a single mod in the 'Mods' table
+
+        Data is returned in the following format::
+
+            {
+                "id": int,
+                "name": str,
+                "description": str,
+                "version": str,
+                "filename": str,
+                "filehash": str,
+                "link": str,
+                "type": str,
+                "role": str
+            }
+        '''
+        # create cursor
+        cursor = self.conn.cursor()
+
+        # use row factory so that values are returned with their corresponding column name
+        cursor.row_factory = Row
+
+        # select single row
+        cursor.execute(SELECT_ONE_MOD, (modId,))
+
+        # convert to dictionary of column name mapped to value
+        modRow = dict(cursor.fetchone())
+
+        # close the cursor
+        cursor.close()
+
+        # return dictionary
+        return modRow
+    
+    
+    def select_mod_dependencies(self, modId: int) -> list[str]:
+        '''
+        Select all mod dependencies for a single Mod
+
+        Returns dependency list as a list of strings
+        '''
+        # create cursor
+        cursor = self.conn.cursor()
+
+        # select dependency list using mod ID
+        cursor.execute(SELECT_MOD_DEPENDENCIES, (modId,))
+
+        # convert to a list of strings
+        depList = [mod[0] for mod in cursor.fetchall()]
+
+        # close cursor
+        cursor.close()
+
+        # return dependency list
+        return depList
+
+
+    def select_client_downloads(self):
+        '''
+        Select all mod filenames that need to be downloaded by the client
+
+        Returns a list of string filenames
+        '''
+        # create cursor
+        cursor = self.conn.cursor()
+
+        # select all mods that are needed by the client
+        cursor.execute(SELECT_CLIENT_DOWNLOADS)
+        
+        # convert to list of strings
+        downloadList = [filename[0] for filename in cursor.fetchall()]
+        
+        # close the cursor
+        cursor.close()
+
+        # return the list
+        return downloadList
+    
+
+    def select_client_deletes(self):
+        '''
+        Select all mod filenames that need to be deleted by the client
+
+        Returns a list of string filenames
+        '''
+        # create cursor
+        cursor = self.conn.cursor()
+
+        # select all mods that are out of date on the client
+        cursor.execute(SELECT_CLIENT_DELETES)
+        
+        # convert to list of strings
+        deleteList = [filename[0] for filename in cursor.fetchall()]
+        
+        # close the cursor
+        cursor.close()
+
+        # return the list
+        return deleteList
+    
+
+    def select_client_current(self):
+        '''
+        Select all mod filenames that are up-to-date on the client
+
+        Returns a list of string filenames
+        '''
+        # create cursor
+        cursor = self.conn.cursor()
+
+        # select all mods that are up to date on the client
+        cursor.execute(SELECT_CLIENT_CURRENT)
+        
+        # convert to list of strings
+        currentList = [filename[0] for filename in cursor.fetchall()]
+        
+        # close the cursor
+        cursor.close()
+
+        # return the list
+        return currentList
+        
