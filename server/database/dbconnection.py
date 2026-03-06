@@ -68,55 +68,55 @@ class DBConnection:
         self.conn = None
 
     
-    def insert_mod(self, insert_params: tuple[str, str, str, str, str, str, str, str]) -> None:
+    def insert_mod(self, insertParams: tuple[str, str, str, str, str, str, str, str]) -> None:
         '''
         Inserts a new mod row into the 'Mods' table.
 
-        `insert_params` tuple must supply the parameters in the following order:
+        `insertParams` is a tuple of the strings that will be inserted into the 'Mods' Table
 
-        (name, description, version, filename, filehash, link, type, role)
+        Format: (name, description, version, filename, filehash, link, type, role)
         '''
         # create cursor for transaction
         cursor = self.conn.cursor()
 
         # insert the mod into the database
-        cursor.execute(INSERT_MOD, insert_params)
+        cursor.execute(INSERT_MOD, insertParams)
 
         # close the cursor
         cursor.close()
 
 
-    def insert_dependencies(self, insert_params: list[tuple[int, int]]):
+    def insert_dependencies(self, insertParams: list[tuple[int, int]]):
         '''
         Inserts a list of dependancies into the 'Dependencies' table.
 
-        `insert_params` list must contain tuples of ints in the following order
+        `insertParams` is a list of tuples each containing the ID of a mod in the 'Mods' and the ID of the mod that it is dependent on
 
-        [(mod_id, dependency_id)]
+        Format: [(mod_id, dep_id), ...]
         '''
         # create cursor for transaction
         cursor = self.conn.cursor()
 
         # insert all dependencies into the database
-        cursor.executemany(INSERT_DEPENDENCY, insert_params)
+        cursor.executemany(INSERT_DEPENDENCY, insertParams)
 
         # close the cursor
         cursor.close()
 
 
-    def insert_client_mods(self, insert_params: list[tuple[str, str]]):
+    def insert_client_mods(self, insertParams: list[tuple[str, str]]):
         '''
         Inserts a list of client mods into the 'ClientMods' temp table
 
-        `insert_params` list must contain tuples of strings in the following format:
+        `insertParams` is a list of tuples each containing a filename and its corresponding filehash
 
-        [(filename, filehash), ...]
+        Format: [(filename, filehash), ...]
         '''
         # create cursor
         cursor = self.conn.cursor()
 
         # insert client list
-        cursor.executemany(INSERT_CLIENT_MODS, insert_params)
+        cursor.executemany(INSERT_CLIENT_MODS, insertParams)
 
         # close the cursor
         cursor.close()
@@ -124,7 +124,9 @@ class DBConnection:
 
     def select_all_mods(self) -> list[dict[str, str|int]]:
         '''
-        Selects all columns from the 'Mods' table and returns them as a dictionary.
+        Selects all columns from the 'Mods' table and returns them as a list of dictionaries.
+
+        Each Dictionary represents a single mod in the table
 
         Data is returned in the following format::
 
@@ -163,7 +165,7 @@ class DBConnection:
 
     def select_single_mod(self, modId: int) -> dict[str, str|int]:
         '''
-        Selects all columns for a single mod in the 'Mods' table
+        Selects all columns for a single mod in the 'Mods' table and returns it as a single dictionary
 
         Data is returned in the following format::
 
@@ -204,9 +206,13 @@ class DBConnection:
     
     def select_mod_dependencies(self, modId: int) -> list[str]:
         '''
-        Select all mod dependencies for a single Mod
+        Selects the display names of mods in the 'Mods' table that are a dependency of the mod ID given
 
-        Returns dependency list as a list of strings
+        `modId` must be an integer that matches the ID of a mod in the 'Mods' table
+
+        Data returned the following format::
+
+            [<name_1>, ...]
         '''
         # create cursor
         cursor = self.conn.cursor()
@@ -226,9 +232,11 @@ class DBConnection:
 
     def select_client_downloads(self):
         '''
-        Select all mod filenames that need to be downloaded by the client
+        Select all mod filenames that need to be downloaded by the client and returns them as a list of strings
 
-        Returns a list of string filenames
+        Data returned the following format::
+
+            [<filename_1>, ...]
         '''
         # create cursor
         cursor = self.conn.cursor()
@@ -248,9 +256,11 @@ class DBConnection:
 
     def select_client_deletes(self):
         '''
-        Select all mod filenames that need to be deleted by the client
+        Select all mod filenames that need to be deleted by the client and returns them as a list of strings
 
-        Returns a list of string filenames
+        Data returned the following format::
+
+            [<filename_1>, ...]
         '''
         # create cursor
         cursor = self.conn.cursor()
@@ -270,9 +280,11 @@ class DBConnection:
 
     def select_client_current(self):
         '''
-        Select all mod filenames that are up-to-date on the client
+        Select all mod filenames that are up-to-date on the client and returns them as a list of strings
 
-        Returns a list of string filenames
+        Data returned the following format::
+
+            [<filename_1>, ...]
         '''
         # create cursor
         cursor = self.conn.cursor()
