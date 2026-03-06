@@ -189,7 +189,11 @@ class DBConnection:
         cursor.execute(SELECT_ONE_MOD, (modId,))
 
         # convert to dictionary of column name mapped to value
-        modRow = dict(cursor.fetchone())
+        modRow = cursor.fetchone()
+
+        # if a row is returned, convert to dict
+        if modRow:
+            modRow = dict(modRow)
 
         # close the cursor
         cursor.close()
