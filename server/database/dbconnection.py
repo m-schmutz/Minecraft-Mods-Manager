@@ -230,7 +230,7 @@ class DBConnection:
         return depList
 
 
-    def select_client_downloads(self):
+    def select_client_downloads(self) -> list[str]:
         '''
         Select all mod filenames that need to be downloaded by the client and returns them as a list of strings
 
@@ -254,7 +254,7 @@ class DBConnection:
         return downloadList
     
 
-    def select_client_deletes(self):
+    def select_client_deletes(self) -> list[str]:
         '''
         Select all mod filenames that need to be deleted by the client and returns them as a list of strings
 
@@ -278,7 +278,7 @@ class DBConnection:
         return deleteList
     
 
-    def select_client_current(self):
+    def select_client_current(self) -> list[str]:
         '''
         Select all mod filenames that are up-to-date on the client and returns them as a list of strings
 
