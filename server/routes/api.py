@@ -2,6 +2,7 @@
 # Python Lib Imports 
 
 from flask import Blueprint, jsonify, send_file, request
+from werkzeug.utils import secure_filename
 
 
 #################################################################
@@ -13,6 +14,7 @@ from server.database import DBConnection, ModsTable, DepsTable
 #################################################################
 # Local Imports
 
+from .utils import get_mod_filepath
 
 #################################################################
 # Blueprint Object 
@@ -149,24 +151,32 @@ def check_client_mods():
 #################################################################
 # API Admin Routes
 
-
 @api_bp.route('/admin/add/mod', methods=['POST'])
 def add_mod():
     pass
 
 
+#################################################################
+# API Download Routes
 
+@api_bp.route('/download/mod/<filename>', methods=['GET'])
+def send_mod_file(filename: str):
 
+    # ensure that the filename passed is safe
+    filename = secure_filename(filename)
+    
+    # open connection to database
+    with DBConnection() as db:
+        # search the database by filename to find role
+        role = db.select_mod_role(filename)
 
+    # check if a role was returned
+    if not role:
+        # return error json if filename could not be found in the database
+        return jsonify({'error': f'\'{filename}\' does not match any filenames in the database'})
 
+    # build filepath from the filename and the role
+    filepath = get_mod_filepath(filename, role)
 
-
-
-
-
-
-
-
-
-
-
+    # send the file that is located using the derived path
+    return send_file(filepath, as_attachment=True)
