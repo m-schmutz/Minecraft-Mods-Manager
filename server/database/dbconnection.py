@@ -15,7 +15,7 @@ from server.config import DB_PATH
 
 from .sql import FOREIGN_KEYS, INIT_TABLES, TEMP_CHECK_TABLE
 from .sql import INSERT_MOD, INSERT_DEPENDENCY, INSERT_CLIENT_MODS
-from .sql import SELECT_ALL_MODS, SELECT_ONE_MOD, SELECT_MOD_DEPENDENCIES, SELECT_CLIENT_DOWNLOADS, SELECT_CLIENT_DELETES, SELECT_CLIENT_CURRENT
+from .sql import SELECT_ALL_MODS, SELECT_ONE_MOD, SELECT_MOD_DEPENDENCIES, SELECT_CLIENT_DOWNLOADS, SELECT_CLIENT_DELETES, SELECT_CLIENT_CURRENT, SELECT_MOD_ROLE
 
 
 #################################################################
@@ -301,3 +301,24 @@ class DBConnection:
         # return the list
         return currentList
         
+
+    def select_mod_role(self, filename:str) -> str|None:
+        '''
+        Select the role of a single mod from the 'Mods' table
+
+        Return a string that is the corresponding role or None if the name does not exist
+        '''
+        # create cursor
+        cursor = self.conn.cursor()
+
+        # select mod role using the filename to search
+        cursor.execute(SELECT_MOD_ROLE, (filename,))
+
+        # fetch result if it exists
+        role = cursor.fetchone()
+
+        # close the cursor
+        cursor.close()
+
+        # return the fole
+        return role
