@@ -88,10 +88,17 @@ VALUES (?, ?);
 #################################################################
 # SQL for selecting values
 
-SELECT_ALL_MODS = f'SELECT * FROM {ModsTable.TABLE_NAME};'
+SELECT_ALL_MODS = f'''
+SELECT * 
+FROM {ModsTable.TABLE_NAME};
+'''
 
 
-SELECT_ONE_MOD = f'SELECT * FROM {ModsTable.TABLE_NAME} WHERE {ModsTable.ID} = ?;'
+SELECT_ONE_MOD = f'''
+SELECT * 
+FROM {ModsTable.TABLE_NAME} 
+WHERE {ModsTable.ID} = ?;
+'''
 
 
 SELECT_MOD_DEPENDENCIES = f'''
@@ -131,6 +138,12 @@ AND {ClientMods.TABLE_NAME}.{ClientMods.FILEHASH} = {ModsTable.TABLE_NAME}.{Mods
 '''
 
 
+SELECT_MOD_ROLE = f'''
+SELECT {ModsTable.ROLE} 
+FROM {ModsTable.TABLE_NAME} 
+WHERE {ModsTable.FILENAME} = ?;'''
+
+
 #################################################################
 # SQL for updating mods
 
@@ -152,4 +165,8 @@ WHERE {ModsTable.ID} = ?;
 #################################################################
 # SQL for deleting mods
 
-DELETE_MOD = f'DELETE FROM {ModsTable.TABLE_NAME} WHERE {ModsTable.ID} = ?; '
+DELETE_MOD = f'''
+DELETE 
+FROM {ModsTable.TABLE_NAME} 
+WHERE {ModsTable.ID} = ?;
+'''
