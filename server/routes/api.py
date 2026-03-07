@@ -149,14 +149,6 @@ def check_client_mods():
 
 
 #################################################################
-# API Admin Routes
-
-@api_bp.route('/admin/add/mod', methods=['POST'])
-def add_mod():
-    pass
-
-
-#################################################################
 # API Download Routes
 
 @api_bp.route('/download/mod/<filename>', methods=['GET'])
