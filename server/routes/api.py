@@ -16,6 +16,7 @@ from server.database import DBConnection, ModsTable, DepsTable
 
 from .utils import get_mod_filepath
 
+
 #################################################################
 # Blueprint Object 
 
@@ -61,7 +62,7 @@ def get_mod_list():
     return jsonify(modList)
 
 
-@api_bp.route('/info/mod/<int:modId>', methods=['GET'])
+@api_bp.route('/info/mod/<modId>', methods=['GET'])
 def get_mod_info(modId: int):
     '''
     Return mod from database given the id of that mod
@@ -81,6 +82,15 @@ def get_mod_info(modId: int):
             "dependencies": [str, ...]
         }
     '''
+
+    # attempt to convert URL parameter to an int
+    try:
+        modId = int(modId)
+
+    # return error if the parameter cannot be converted to an int
+    except ValueError:
+        return jsonify({'error': f'\'{modId}\' is not a valid integer'})
+
     # open connection to database
     with DBConnection() as db:
         # select mod based on ID
