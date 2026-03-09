@@ -1,11 +1,20 @@
 from flask import Flask
 from .config import check_config
+from sys import exit
+from server.routes import api_bp
 
 
 def create_app() -> Flask:
     '''Create flask app using web and api blueprints'''
     # check that config is valid
-    check_config()
+    try:
+        check_config()
+
+    # exit on config error
+    except ValueError as e:
+        print('CONFIG ERROR: Check that all required values are defined')
+        print(f'\t-> {e}')
+        exit(1)
 
     # create Flask app object
     app = Flask(
@@ -13,9 +22,6 @@ def create_app() -> Flask:
         template_folder='templates',
         static_folder='static'
     )
-
-    # import route blueprints
-    from server.routes import api_bp
 
     # register blueprints
     # app.register_blueprint(web_bp)
