@@ -1,7 +1,7 @@
 #################################################################
 # Python Lib Imports 
 
-from os.path import isfile, isdir
+from os.path import isfile, isdir, isabs
 
 
 #################################################################
@@ -73,10 +73,16 @@ def check_config():
         if not isdir(dirPath):
             raise ValueError(f'\'{dirPath}\' is not a valid directory path')
         
+        elif not isabs(dirPath):
+            raise ValueError(f'\'{dirPath}\' is not an absolute path')
+        
     # check that file paths are valid
     for filePath in [DB_PATH, MOD_LOADER_PATH]:
         if not isfile(filePath):
             raise ValueError(f'\'{filePath}\' is not a valid file path')
+        
+        elif not isabs(dirPath):
+            raise ValueError(f'\'{dirPath}\' is not an absolute path')
         
     # check if admin ip's are defined
     if len(ADMIN_IPS) == 0:
