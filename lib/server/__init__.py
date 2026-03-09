@@ -1,7 +1,7 @@
 from flask import Flask
 from .config import check_config
 from sys import exit
-from server.routes import api_bp
+from .routes import api_bp
 
 
 def create_app() -> Flask:

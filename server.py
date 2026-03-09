@@ -1,4 +1,4 @@
-from server import create_app
+from lib.server import create_app
 
 
 if __name__ == '__main__':
