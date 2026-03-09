@@ -7,8 +7,8 @@ from os.path import join
 #################################################################
 # Server Imports 
 
-from server.database.schemas import RoleValues
-from server.config import SERVER_MODS_DIR, CLIENT_MODS_DIR
+from lib.server.database.schemas import RoleValues
+from lib.server.config import SERVER_MODS_DIR, CLIENT_MODS_DIR
 
 
 #################################################################

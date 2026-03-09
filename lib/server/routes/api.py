@@ -8,7 +8,7 @@ from werkzeug.utils import secure_filename
 #################################################################
 # Server Imports
 
-from server.database import DBConnection, ModsTable, DepsTable
+from lib.server.database import DBConnection, ModsTable, DepsTable
 
 
 #################################################################

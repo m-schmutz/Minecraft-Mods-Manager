@@ -7,7 +7,7 @@ from sqlite3 import connect, Connection, Row
 #################################################################
 # Server Imports
 
-from server.config import DB_PATH
+from lib.server.config import DB_PATH
 
 
 #################################################################
