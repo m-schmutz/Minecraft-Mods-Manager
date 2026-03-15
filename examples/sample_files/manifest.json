@@ -15,22 +15,6 @@
         "type": "Feature",
         "role": "Client/Server"
     },
-    "BiomesOPlenty-neoforge-1.21.1-21.1.0.13.jar": {
-        "name": "Biomes O' Plenty",
-        "description": "Adds dozens of new biomes, plants, trees, and world‑generation features.",
-        "version": "21.1.0.13",
-        "link": "https://www.curseforge.com/minecraft/mc-mods/biomes-o-plenty",
-        "type": "Feature",
-        "role": "Client/Server"
-    },
-    "aether-1.21.1-1.5.10-neoforge.jar": {
-        "name": "The Aether",
-        "description": "Adds the Aether dimension with new mobs, dungeons, blocks, and progression.",
-        "version": "1.5.10",
-        "link": "https://www.curseforge.com/minecraft/mc-mods/aether",
-        "type": "Feature",
-        "role": "Client/Server"
-    },
     "create-1.21.1-6.0.9.jar": {
         "name": "Create",
         "description": "Adds mechanical systems, automation, contraptions, and kinetic machinery.",
