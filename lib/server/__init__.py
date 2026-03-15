@@ -1,8 +1,19 @@
+#################################################################
+# Python Lib Imports 
+
 from flask import Flask
-from .config import check_config
 from sys import exit
+
+
+#################################################################
+# Local Imports 
+
+from .config import check_config
 from .routes import api_bp
 
+
+#################################################################
+# create_app function
 
 def create_app() -> Flask:
     '''Create flask app using web and api blueprints'''
@@ -12,7 +23,7 @@ def create_app() -> Flask:
 
     # exit on config error
     except ValueError as e:
-        print('CONFIG ERROR: Check that all required values are defined')
+        print('CONFIG ERROR: Check config file located at lib/server/config.py')
         print(f'\t-> {e}')
         exit(1)
 
