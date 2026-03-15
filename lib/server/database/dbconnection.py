@@ -2,12 +2,13 @@
 # Python Lib Imports 
 
 from sqlite3 import connect, Connection, Row
+from os.path import join
 
 
 #################################################################
 # Server Imports
 
-from lib.server.config import DB_PATH
+from lib.server.config import DB_DIR
 
 
 #################################################################
@@ -34,7 +35,7 @@ class DBConnection:
 
     def __enter__(self):
         # connect to database
-        self.conn = connect(DB_PATH)
+        self.conn = connect(join(DB_DIR, 'database.sqlite'))
 
         # activate foreign keys constraint
         self.conn.execute(FOREIGN_KEYS)

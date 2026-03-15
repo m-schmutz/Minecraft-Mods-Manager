@@ -5,15 +5,15 @@ from os.path import isfile, isdir, isabs
 
 
 #################################################################
-# Server Configuration
+# Server Configuration (ALL PATHS MUST BE ABSOLUTE)
 #
 # SERVER_MODS_DIR: Directory that server mods are stored in. For production this should be the 'mods' folder for the server. 
 # 
 # CLIENT_MODS_DIR: Directory that is used for storing client-side only mods.
 #
-# DB_PATH: Absolute path to the file that sqlite should use to store the database
+# DB_DIR: Directory that server should use to store sqlite database
 #
-# MOD_LOADER_PATH: Absolute path to the .jar installer file for the Mod Loader
+# MOD_LOADER_PATH: Path to the .jar installer file for the Mod Loader
 #
 # ADMIN_IP: Set of IP's that are allowed to access the 'admin' routes of the website and api (modifying mod files)
 #
@@ -23,6 +23,9 @@ from os.path import isfile, isdir, isabs
 #
 # MC_MODLOADER: Display name for the Mod Loader used for the minecraft server
 #
+#################################################################
+#
+# NOTE FOR WINDOWS: BACKSLASHES NEED TO EITHER BE ESCAPED OR USE RAW STRING
 #
 #################################################################
 # SERVER DIRECTORY PATHS (REQUIRED)
@@ -33,12 +36,12 @@ SERVER_MODS_DIR = ''
 # directory for holding client-specific mods
 CLIENT_MODS_DIR = ''
 
+# directory where sqlite database should be located
+DB_DIR = ''
+
 
 #################################################################
 # SERVER FILE PATHS (REQUIRED)
-
-# path to where sqlite database file should be located
-DB_PATH = ''
 
 # path to minecraft installer
 MOD_LOADER_PATH = ''
@@ -77,7 +80,7 @@ def check_config():
             raise ValueError(f'\'{dirPath}\' is not an absolute path')
         
     # check that file paths are valid
-    for filePath in [DB_PATH, MOD_LOADER_PATH]:
+    for filePath in [MOD_LOADER_PATH]:
         if not isfile(filePath):
             raise ValueError(f'\'{filePath}\' is not a valid file path')
         
