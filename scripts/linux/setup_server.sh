@@ -24,14 +24,11 @@ if [[ ! -d "$SERVER_ENV" ]]; then
     echo "Creating virtual environment"
     python3 -m venv "$SERVER_ENV"
 
-else 
-    echo "Virtual environment present"
+    # ensure pip is latest version
+    echo "Upgrading pip"
+    "$SERVER_ENV_PIP" install --upgrade pip -q
+
+    # update environment with packages in requirements.txt
+    echo "Installing pip requirements"
+    "$SERVER_ENV_PIP" install -r "$SERVER_REQUIREMENTS" -q
 fi
-
-# ensure pip is latest version
-echo "Upgrading pip"
-"$SERVER_ENV_PIP" install --upgrade pip -q
-
-# update environment with packages in requirements.txt
-echo "Installing pip requirements"
-"$SERVER_ENV_PIP" install -r "$SERVER_REQUIREMENTS" -q
