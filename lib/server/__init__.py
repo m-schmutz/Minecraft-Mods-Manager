@@ -9,7 +9,7 @@ from sys import exit
 # Local Imports 
 
 from .config import check_config
-from .routes import api_bp
+from .routes import api_bp, web_bp
 
 
 #################################################################
@@ -35,7 +35,7 @@ def create_app() -> Flask:
     )
 
     # register blueprints
-    # app.register_blueprint(web_bp)
+    app.register_blueprint(web_bp)
     app.register_blueprint(api_bp, url_prefix='/api')
 
     # return Flask app object
