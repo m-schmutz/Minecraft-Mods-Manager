@@ -1,8 +1,20 @@
 # Minecraft-Mods-Manager
 
+Server and client to sync minecraft mods
 
-# Setup Python Virtual Environment
-1. `python.exe -m venv ./.venv`
-2. `.\.venv\Scripts\activate`
-3. `python.exe -m pip install --upgrade pip`
-4. `python.exe -m pip install -r .\requirements.txt`
+## Setup Server Python Environment:
+- **Linux:**
+    - Run the setup script at `scripts/linux/setup_server.sh`
+
+- **Windows:**
+    - Run the setup script at `scripts/windows/setup_server.bat`
+
+
+## Run Server for Testing:
+- **Linux:**
+    - Run the setup script at `scripts/linux/start_dev.sh`
+
+- **Windows:**
+    - Run the setup script at `scripts/windows/start_dev.bat`
+
+

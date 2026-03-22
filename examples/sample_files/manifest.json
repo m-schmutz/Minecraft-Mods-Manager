@@ -1,0 +1,26 @@
+{
+    "travelersbackpack-neoforge-1.21.1-10.1.32.jar": {
+        "name": "Traveler's Backpacks",
+        "description": "Adds functional, portable backpacks with storage, tanks, upgrades, and customization.",
+        "version": "10.1.32",
+        "link": "https://www.curseforge.com/minecraft/mc-mods/travelers-backpack",
+        "type": "Feature",
+        "role": "Client/Server"
+    },
+    "waystones-neoforge-1.21.1-21.1.25.jar": {
+        "name": "Waystones",
+        "description": "Adds craftable and naturally generated waystones for fast travel between locations.",
+        "version": "21.1.25",
+        "link": "https://www.curseforge.com/minecraft/mc-mods/waystones",
+        "type": "Feature",
+        "role": "Client/Server"
+    },
+    "create-1.21.1-6.0.9.jar": {
+        "name": "Create",
+        "description": "Adds mechanical systems, automation, contraptions, and kinetic machinery.",
+        "version": "6.0.9",
+        "link": "https://www.curseforge.com/minecraft/mc-mods/create",
+        "type": "Feature",
+        "role": "Client/Server"
+    }
+}

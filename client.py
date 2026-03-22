@@ -15,7 +15,7 @@ try:
     import hashlib
     import json
     import argparse
-    from progress_bar import ProgressBar
+    from lib.client import ProgressBar
 except ModuleNotFoundError as e:
     print("Python module not installed:", e)
     quit()
