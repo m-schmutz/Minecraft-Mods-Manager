@@ -1,0 +1,55 @@
+
+
+
+
+from tomlkit import document, table, aot
+
+doc = document()
+
+# Create the array-of-tables for mods
+mods = aot()
+
+mod = table()
+mod["modId"] = "alexsmobs"
+mod["version"] = "1.22.16"
+mod["displayName"] = "Alex's Mobs"
+mod["displayURL"] = "https://www.curseforge.com/minecraft/mc-mods/alexs-mobs"
+mod["logoFile"] = "alexs_mobs.png"
+mod["authors"] = "Alexthe668, Carro1001, Paint_Ninja, Raguto"
+mod["description"] = "New, original, engaging, and aesthetic mobs for Minecraft."
+
+mods.append(mod)
+doc["mods"] = mods
+
+
+
+
+# Create the dependencies table
+dependencies = table()
+
+# Create the array-of-tables for dependencies.alexsmobs
+alex_deps = aot()
+
+# First dependency
+dep1 = table()
+dep1["modId"] = "citadel"
+dep1["mandatory"] = True
+dep1["versionRange"] = "[2.6.0,)"
+dep1["ordering"] = "AFTER"
+dep1["side"] = "BOTH"
+alex_deps.append(dep1)
+
+# Second dependency
+dep2 = table()
+dep2["modId"] = "neoforge"
+dep2["mandatory"] = True
+dep2["versionRange"] = "[21.1.0,)"
+dep2["ordering"] = "NONE"
+dep2["side"] = "BOTH"
+alex_deps.append(dep2)
+
+# Attach the array-of-tables to dependencies
+dependencies["alexsmobs"] = alex_deps
+
+# Add dependencies to the document
+doc["dependencies"] = dependencies
