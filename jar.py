@@ -13,11 +13,11 @@ tomlPath = '/home/msch/Projects/Minecraft-Mods-Manager/examples/sample_files/neo
 
 
 with open(tomlPath, 'r') as f:
-    tomlData = f.read()
+    tomlStr = f.read()
 
 
 
-doc = loads(tomlData)
+doc = loads(tomlStr)
 
 
 print(doc)
