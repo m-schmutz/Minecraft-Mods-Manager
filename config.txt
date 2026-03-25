@@ -1,8 +1,44 @@
 
 
 
+Code Structure:
+    server:    
+        - __init__.py
+
+        routes:
+            - __init__.py
+            - api.py
+            - web.py
+
+        database:
+            - __init__.py
+            - dbconnection.py
+            - schemas.py
+            - sql.py
+
+        fileutils
+            - __init__.py
+            - jarfile.py
+            - zip.py
+            - filesystem.py
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 parent directory:
     - server-root
         - database
         - client-mods
         - mod-loader
+
+
