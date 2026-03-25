@@ -42,4 +42,11 @@ def extract_dependancies(doc: TOMLDocument) -> tuple:
 
 
 
+def set_side(doc: TOMLDocument, side: str):
+    modsAot: list[dict[str, str]] = doc.get('mods')
 
+    if (len(modsAot) != 1):
+        raise RuntimeError('Expected only one mod in array of tables')
+    
+
+    modsAot[0]['side'] = side
