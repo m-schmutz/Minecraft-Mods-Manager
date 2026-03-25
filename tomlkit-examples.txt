@@ -53,3 +53,23 @@ dependencies["alexsmobs"] = alex_deps
 
 # Add dependencies to the document
 doc["dependencies"] = dependencies
+
+
+
+
+jar functions:
+    - get toml document
+    - get metadata
+    - get dependancies
+    - set metadata fields
+    - 
+
+
+
+metadata keys:
+    - 'modId'
+    - 'version'
+    - 'displayName'
+    - 'displayURL'
+    - 'description'
+

@@ -1,40 +1,27 @@
-#!./venv-server/bin/python3
-
 from zipfile import ZipFile
-from tomlkit import loads, dumps
+from tomlkit import loads, dumps, TOMLDocument
 
 
-jarPath = '/home/msch/Projects/Minecraft-Mods-Manager/examples/sample_files/alexsmobs-1.22.16.jar'
-
-tomlPath = '/home/msch/Projects/Minecraft-Mods-Manager/examples/sample_files/neoforge.mods.toml'
+NEOFORGE_TOML_ZIP_PATH = 'META-INF/neoforge.mods.toml'
 
 
+def get_toml_doc(zip: ZipFile) -> TOMLDocument|None:
+    with zip.open(NEOFORGE_TOML_ZIP_PATH, 'r') as tomlFile:
+        tomlBytes = tomlFile.read()
+
+    return loads(tomlBytes.decode())
 
 
-def get_metadata(jarPath: str) -> tuple|None:
+def get_metadata(jarPath: str):
+    with ZipFile(jarPath, 'r') as zFile:
+        tomlDoc = get_toml_doc(zFile)
+
+    return tomlDoc
+
+
+def get_dependancies():
     pass
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-with open(tomlPath, 'r') as f:
-    tomlStr = f.read()
-
-
-
-doc = loads(tomlStr)
-
-
-print(doc)
