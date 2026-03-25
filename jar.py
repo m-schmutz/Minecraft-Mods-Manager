@@ -21,18 +21,22 @@ def get_toml_doc(jarPath: str) -> Optional[TOMLDocument]:
         return None
 
 
+def extract_metadata(doc: TOMLDocument) -> tuple:
+    modsAot = doc.get('mods')
+
+    if (len(modsAot) != 1):
+        raise RuntimeError('Expected only one mod in array of tables')
+    
+    return (
+        modsAot[0]['modId'],
+        modsAot[0]['version'],
+        modsAot[0]['displayName'],
+        modsAot[0]['displayURL'],
+        modsAot[0]['description'],
+    )
 
 
-
-
-
-
-
-
-
-
-
-def get_dependancies():
+def extract_dependancies(doc: TOMLDocument) -> tuple:
     pass
 
 
