@@ -1,22 +1,35 @@
 from zipfile import ZipFile
 from tomlkit import loads, dumps, TOMLDocument
+from typing import Optional
 
 
 NEOFORGE_TOML_ZIP_PATH = 'META-INF/neoforge.mods.toml'
 
 
-def get_toml_doc(zip: ZipFile) -> TOMLDocument|None:
-    with zip.open(NEOFORGE_TOML_ZIP_PATH, 'r') as tomlFile:
-        tomlBytes = tomlFile.read()
+def get_toml_doc(jarPath: str) -> Optional[TOMLDocument]:
 
-    return loads(tomlBytes.decode())
+    try:
+        with ZipFile(jarPath, 'r') as zFile:
+
+            with zFile.open(NEOFORGE_TOML_ZIP_PATH, 'r') as tFile:
+
+                tBytes = tFile.read()
+        
+        return loads(tBytes.decode())
+    
+    except:
+        return None
 
 
-def get_metadata(jarPath: str):
-    with ZipFile(jarPath, 'r') as zFile:
-        tomlDoc = get_toml_doc(zFile)
 
-    return tomlDoc
+
+
+
+
+
+
+
+
 
 
 def get_dependancies():
