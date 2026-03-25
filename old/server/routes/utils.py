@@ -1,27 +1,33 @@
-from hashlib import file_digest, sha256
-from server.config import ADMIN_IPS, SERVER_MODS_DIR, CLIENT_MODS_DIR
-from typing import BinaryIO
-from werkzeug.datastructures import FileStorage, ImmutableMultiDict
-from werkzeug.utils import secure_filename
-from server.database.schemas import ModsTable, TypeValues, RoleValues
+#################################################################
+# Python Lib Imports 
+
 from os.path import join
-from flask import Request
+from hashlib import file_digest, sha256
+from typing import BinaryIO
+from werkzeug.utils import secure_filename
+from zipfile import ZipFile, is_zipfile
 
 
-FORM_STR_KEYS = [
-    ModsTable.NAME, 
-    ModsTable.DESCRIPTION,
-    ModsTable.VERSION,
-    ModsTable.LINK,
-]
+#################################################################
+# Server Imports 
 
-VALID_TYPE_VALUES = {TypeValues.FEATURE, TypeValues.LIBRARY}
-
-VALID_ROLE_VALUES = {RoleValues.BOTH, RoleValues.SERVER, RoleValues.CLIENT}
+from lib.server.database.schemas import RoleValues
+from lib.server.config import SERVER_MODS_DIR, CLIENT_MODS_DIR, ADMIN_IPS
 
 
-def calc_hash(stream: BinaryIO) -> str:
-    '''Hash the contents of a file and return its hex digest using HASH_FUNCTION'''
+#################################################################
+# Constants
+
+JAR_MANIFEST = 'META-INF/MANIFEST.MF'
+
+
+#################################################################
+# Internal Functions 
+
+def _calc_hash(stream: BinaryIO) -> str:
+    '''
+    Hash the contents of a file and return its hex digest using HASH_FUNCTION
+    '''
     # calculate hash
     digest = file_digest(stream, sha256)
     
@@ -32,55 +38,76 @@ def calc_hash(stream: BinaryIO) -> str:
     return digest.hexdigest()
 
 
-def check_remote_ip(remote_ip:str) -> str:
-    '''Return True if remote IP is not in ADMIN_IPS'''
+def _find_manifest(zip: ZipFile):
+    '''
+    Check if the opened zipfile contains a 'MANIFEST.MF' file present in mod files
+    '''
+    try:
+        # attempt to get file
+        zip.getinfo(JAR_MANIFEST)
+
+        # return true if found
+        return True
+    
+    # otherwise return false
+    except KeyError:
+        return False
+
+
+#################################################################
+# Routes Utility Functions 
+
+def check_remote_ip(remote_ip:str) -> bool:
+    '''
+    Return True if remote IP is not in ADMIN_IPS
+    '''
     return remote_ip not in ADMIN_IPS
 
 
-def check_upload_file(filesContainer: ImmutableMultiDict[str, FileStorage]) -> tuple[FileStorage, str, str]:
-    
-    files = filesContainer.getlist('file_upload')
-    
-    if (len(files) == 0):
-        raise ValueError('No File Uploaded')
-    
-    if (len(files) > 1):
-        raise ValueError('Only one file per upload allowed')
-    
-    file = files[0]
-
-    if not file.filename.endswith('.jar'):
-        raise ValueError('Only .jar files are allowed')
-    
-    if ' ' in file.filename:
-        raise ValueError('Filename cannot have any spaces')
-
-    filehash = calc_hash(file.stream)
-    
-    return file, secure_filename(file.filename), filehash
-
-
-def check_form_data(formData: ImmutableMultiDict[str, str]) -> dict[str, str]:
-    
-    for k in FORM_STR_KEYS:
-        if formData[k] is None:
-            raise ValueError(f'No string provided for {k}')
-
-    if formData[ModsTable.TYPE] not in VALID_TYPE_VALUES:
-        raise ValueError(f'{ModsTable.TYPE} value must be in {VALID_TYPE_VALUES}')
-    
-    if formData[ModsTable.ROLE] not in VALID_ROLE_VALUES:
-        raise ValueError(f'{ModsTable.ROLE} value must be in {VALID_ROLE_VALUES}')
-    
-    return formData.to_dict(flat=True)
-        
-
-def get_file_path(filename: str, role: str):
-    if role == RoleValues.BOTH or role == RoleValues.SERVER:
-        return join(SERVER_MODS_DIR, filename)
-
-    elif role == RoleValues.CLIENT:
+def get_mod_filepath(filename: str, role: str):
+    '''
+    Return the path to the mod file based on its role
+    '''
+    # check if the role is client
+    if role == RoleValues.CLIENT:
+        # return the full path to the mod file in the client folder
         return join(CLIENT_MODS_DIR, filename)
+
+    # return full path to the mod file in the server folder
+    return join(SERVER_MODS_DIR, filename)
+
+
+def check_file_name(filename: str, ext: str):
     
-    else:
-        raise ValueError(f'Unable to get path, \'{role}\' is not a valid role')
+    # ensure that filename is safe
+    safeFilename = secure_filename(filename)
+
+    # check that a secure filename could be made
+    if not safeFilename:
+        raise ValueError('filename is invalid')
+
+    # check that filename has correct extension
+    if not safeFilename.endswith(ext):
+        raise ValueError(f'File must have \'{ext}\' extension')
+    
+    # return the filename as a safe version (no spaces and not directory escapes)
+    return safeFilename
+
+
+def verify_jar_file(fileContents: BinaryIO, filename: str):
+    # check that the file has the correct signature
+    if not is_zipfile(fileContents):
+        raise ValueError('File is not a valid jar file')
+    
+    # open jar file as zip
+    with ZipFile(fileContents, 'r') as z:
+        # check if file is corrupted
+        if z.testzip():
+            raise ValueError(f'{filename} is corrupted')
+        
+        # check if manifest is in the jar file
+        if not _find_manifest(z):
+            raise ValueError(f'{filename} is not a valid mod file, no manifest could be found')
+        
+    # return sha256 hash of file contents
+    return _calc_hash(fileContents)

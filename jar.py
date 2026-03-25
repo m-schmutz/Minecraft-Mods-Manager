@@ -42,7 +42,7 @@ def extract_dependancies(doc: TOMLDocument) -> tuple:
 
 
 
-def set_side(doc: TOMLDocument, side: str):
+def set_mod_side(doc: TOMLDocument, side: str) -> None:
     modsAot: list[dict[str, str]] = doc.get('mods')
 
     if (len(modsAot) != 1):

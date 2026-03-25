@@ -1,16 +1,34 @@
-from flask import Blueprint, render_template, redirect, request
-from .utils import check_remote_ip
-from server.config import MC_MODLOADER, MC_VERSION, MC_DIFFICULTY
-from server.database.schemas import RoleValues, TypeValues, ModsTable
+#################################################################
+# Python Lib Imports
 
+from flask import Blueprint, render_template, redirect, request
+
+
+#################################################################
+# Server Imports
+
+from lib.server.database.schemas import RoleValues, TypeValues
+from lib.server.config import MC_MODLOADER, MC_VERSION, MC_DIFFICULTY
+
+
+#################################################################
+# Local Imports
+
+
+
+#################################################################
+# Blueprint Object
 
 # web related blueprint
 web_bp = Blueprint('web', __name__)
 
 
+#################################################################
+# Web Routes
+
 # route for redirecting root path to home page
 @web_bp.route('/', methods=['GET'])
-def root_page():
+def home_redirect():
     return redirect('/home')
 
 
@@ -26,32 +44,4 @@ def home_page():
         types=['All', TypeValues.FEATURE, TypeValues.LIBRARY]
     )
 
-
-### API ADMIN ROUTES ###
-
-
-# route for admin page
-@web_bp.route('/admin', methods=['GET'])
-def admin_page():
-    if check_remote_ip(request.remote_addr):
-        return render_template('403.html'), 403
-    return render_template('admin.html')
-
-
-# route for add-mod page
-@web_bp.route('/admin/add-mod', methods=['GET'])
-def add_mod_page():
-    if check_remote_ip(request.remote_addr):
-        return render_template('403.html'), 403
-    return render_template(
-        'add-mod.html',
-        name_col=ModsTable.NAME,
-        desc_col=ModsTable.DESCRIPTION,
-        version_col=ModsTable.VERSION,
-        link_col=ModsTable.LINK,
-        type_col=ModsTable.TYPE,
-        role_col=ModsTable.ROLE,
-        types=[TypeValues.FEATURE, TypeValues.LIBRARY],
-        roles=[RoleValues.BOTH, RoleValues.CLIENT, RoleValues.SERVER]
-    )
 
