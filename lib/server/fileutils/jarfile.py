@@ -86,13 +86,35 @@ class JarFile:
         self.path = path
 
 
-    def extract_metadata(self) -> tuple:
+    def metadata_tuple(self) -> tuple[Optional[str], Optional[str], Optional[str], Optional[str], Optional[str], Optional[str]]:
         tomlDoc = _get_toml_doc(self.path)
 
         if tomlDoc is None:
             raise ValueError('No neoforge toml file found in jar file')
         
-        modsAot = _get_metadata_table(tomlDoc)
+        modTable = _get_metadata_table(tomlDoc)
+
+        return (
+            modTable.get(MetadataKeys.MODID),
+            modTable.get(MetadataKeys.VERSION),
+            modTable.get(MetadataKeys.DISPLAYNAME),
+            modTable.get(MetadataKeys.DISPLAYURL),
+            modTable.get(MetadataKeys.DESCRIPTION),
+            modTable.get(MetadataKeys.SIDE)
+        )
+    
+
+    def metadata_dict(self) -> dict[str, str]:
+        tomlDoc = _get_toml_doc(self.path)
+
+        if tomlDoc is None:
+            raise ValueError('No neoforge toml file found in jar file')
+        
+        modTable = _get_metadata_table(tomlDoc)
+
+        return {
+            
+        }
 
         
 
