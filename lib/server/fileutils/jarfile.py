@@ -5,6 +5,7 @@ from zipfile import ZipFile, is_zipfile
 from dataclasses import dataclass
 from typing import Optional
 from tomlkit import TOMLDocument, loads
+from tomlkit.items import AoT, Table
 from enum import StrEnum
 
 
@@ -48,6 +49,61 @@ def _get_toml_doc(path: str) -> Optional[TOMLDocument]:
         return None
 
 
-def _extract_mods_aot(doc: TOMLDocument):
-    aot = doc.get(TOMLDocKeys.MODSAOT)
+def _get_metadata_table(doc: TOMLDocument) -> Table:
+    modsAot: AoT = doc.get(TOMLDocKeys.MODSAOT)
 
+    if type(modsAot) is not AoT:
+        raise ValueError(f'Could not find \'{TOMLDocKeys.MODSAOT}\' AoT')
+    
+    if len(modsAot) != 1:
+        raise ValueError(f'\'{TOMLDocKeys.MODSAOT}\' AoT should have length of 1')
+    
+    return modsAot[0]
+
+
+def _get_dependency_list(doc: TOMLDocument, modId: str) -> AoT:
+    depsTable: Table = doc.get(TOMLDocKeys.DEPENDENCIES)
+
+    if type(depsTable) is not Table:
+        raise ValueError(f'Could not find \'{TOMLDocKeys.DEPENDENCIES}\' table')
+    
+    depsAot: AoT = depsTable.get(modId)
+
+    if type(depsAot) is not AoT:
+        raise ValueError(f'Could not find \'{modId}\' dependency AoT')
+    
+    return depsAot
+
+
+#################################################################
+# JarFile Class
+
+class JarFile:
+    def __init__(self, path: str) -> None:
+        if not is_zipfile(path):
+            raise ValueError(f'{path} is not a valid jar file')
+        
+        self.path = path
+
+
+    def extract_metadata(self) -> tuple:
+        tomlDoc = _get_toml_doc(self.path)
+
+        if tomlDoc is None:
+            raise ValueError('No neoforge toml file found in jar file')
+        
+        modsAot = _get_metadata_table(tomlDoc)
+
+        
+
+
+
+'''
+get single table from mods aot
+get dependency list
+set table in mods aot
+set dependency
+
+
+
+'''
