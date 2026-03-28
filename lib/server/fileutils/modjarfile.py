@@ -26,6 +26,13 @@ class MetadataKeys(StrEnum):
     SIDE = 'side'
 
 
+class DependencyKeys(StrEnum):
+    MODID = 'modId'
+    MANDATORY = 'mandatory'
+    VERSIONRANGE = 'versionRange'
+    SIDE = 'side'
+
+
 #################################################################
 # Constants
 
@@ -35,9 +42,17 @@ NEOFORGE_TOML_ZIP_PATH = 'META-INF/neoforge.mods.toml'
 #################################################################
 # Internal Functions
 
-def _get_toml_doc(path: str) -> Optional[TOMLDocument]:
+def _update_jar(jarPath: str, doc: TOMLDocument):
+    pass
+
+
+def _new_toml_doc():
+    pass
+
+
+def _get_toml_doc(jarPath: str):
     try:
-        with ZipFile(path, 'r') as zFile:
+        with ZipFile(jarPath, 'r') as zFile:
 
             with zFile.open(NEOFORGE_TOML_ZIP_PATH, 'r') as tFile:
 
@@ -46,10 +61,10 @@ def _get_toml_doc(path: str) -> Optional[TOMLDocument]:
         return loads(tBytes.decode())
 
     except: 
-        return None
+        return _new_toml_doc()
+    
 
-
-def _get_metadata_table(doc: TOMLDocument) -> Table:
+def _extract_metadata_table(doc: TOMLDocument) -> Table:
     modsAot: AoT = doc.get(TOMLDocKeys.MODSAOT)
 
     if type(modsAot) is not AoT:
@@ -61,18 +76,8 @@ def _get_metadata_table(doc: TOMLDocument) -> Table:
     return modsAot[0]
 
 
-def _get_dependency_list(doc: TOMLDocument, modId: str) -> AoT:
-    depsTable: Table = doc.get(TOMLDocKeys.DEPENDENCIES)
-
-    if type(depsTable) is not Table:
-        raise ValueError(f'Could not find \'{TOMLDocKeys.DEPENDENCIES}\' table')
-    
-    depsAot: AoT = depsTable.get(modId)
-
-    if type(depsAot) is not AoT:
-        raise ValueError(f'Could not find \'{modId}\' dependency AoT')
-    
-    return depsAot
+def _extract_dependency_aot(doc: TOMLDocument, modId: str):
+    pass
 
 
 #################################################################
@@ -86,46 +91,16 @@ class JarFile:
         self.path = path
 
 
-    def metadata_tuple(self) -> tuple[Optional[str], Optional[str], Optional[str], Optional[str], Optional[str], Optional[str]]:
+    def get_toml_data(self) -> dict:
         tomlDoc = _get_toml_doc(self.path)
 
-        if tomlDoc is None:
-            raise ValueError('No neoforge toml file found in jar file')
-        
-        modTable = _get_metadata_table(tomlDoc)
+        metadataTable = _extract_metadata_table(tomlDoc)
 
-        return (
-            modTable.get(MetadataKeys.MODID),
-            modTable.get(MetadataKeys.VERSION),
-            modTable.get(MetadataKeys.DISPLAYNAME),
-            modTable.get(MetadataKeys.DISPLAYURL),
-            modTable.get(MetadataKeys.DESCRIPTION),
-            modTable.get(MetadataKeys.SIDE)
-        )
-    
-
-    def metadata_dict(self) -> dict[str, str]:
-        tomlDoc = _get_toml_doc(self.path)
-
-        if tomlDoc is None:
-            raise ValueError('No neoforge toml file found in jar file')
-        
-        modTable = _get_metadata_table(tomlDoc)
-
-        return {
-            
-        }
-
-        
+        return {str(k): metadataTable.get(k) for k in MetadataKeys}
 
 
 
-'''
-get single table from mods aot
-get dependency list
-set table in mods aot
-set dependency
 
 
 
-'''
+

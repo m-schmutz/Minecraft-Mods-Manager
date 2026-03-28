@@ -22,23 +22,29 @@ Code Structure:
             - zip.py
             - filesystem.py
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 parent directory:
     - server-root
         - database
         - client-mods
         - mod-loader
+
+
+Operations with a Mod Jar File:
+
+- get and edit metadata
+- get and edit dependencies
+- get filehash
+
+
+database:
+    - 
+
+
+
+
+
+
+
+
 
 

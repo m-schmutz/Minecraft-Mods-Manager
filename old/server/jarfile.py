@@ -5,12 +5,59 @@ from zipfile import ZipFile, is_zipfile
 from dataclasses import dataclass
 from typing import Optional
 from tomlkit import TOMLDocument, loads
+from tomlkit.items import AoT, Table
+from enum import StrEnum
 
+
+#################################################################
+# Enums
+
+class TOMLDocKeys(StrEnum):
+    MODSAOT = 'mods'
+    DEPENDENCIES = 'dependencies'
+
+
+class MetadataKeys(StrEnum):
+    MODID = 'modId'
+    VERSION = 'version'
+    DISPLAYNAME = 'displayName'
+    DISPLAYURL = 'displayURL'
+    DESCRIPTION = 'description'
+    SIDE = 'side'
+
+
+#################################################################
+# 
+
+class ModDependency:
+    def __init__(self):
+        pass
+
+
+
+
+
+
+
+class ModMetaData:
+    def __init__(self):
+        pass
+
+
+
+
+
+
+
+
+#################################################################
+# Constants
 
 NEOFORGE_TOML_ZIP_PATH = 'META-INF/neoforge.mods.toml'
 
+
 #################################################################
-# Util Functions
+# Internal Functions
 
 def _get_toml_doc(path: str) -> Optional[TOMLDocument]:
     try:
@@ -26,29 +73,30 @@ def _get_toml_doc(path: str) -> Optional[TOMLDocument]:
         return None
 
 
-#################################################################
+def _get_metadata_table(doc: TOMLDocument) -> Table:
+    modsAot: AoT = doc.get(TOMLDocKeys.MODSAOT)
+
+    if type(modsAot) is not AoT:
+        raise ValueError(f'Could not find \'{TOMLDocKeys.MODSAOT}\' AoT')
+    
+    if len(modsAot) != 1:
+        raise ValueError(f'\'{TOMLDocKeys.MODSAOT}\' AoT should have length of 1')
+    
+    return modsAot[0]
 
 
-@dataclass
-class Metadata:
-    modId: Optional[str]
-    version: Optional[str]
-    displayName: Optional[str]
-    displayURL: Optional[str]
-    description: Optional[str]
-    side = Optional[str]
+def _get_dependency_list(doc: TOMLDocument, modId: str) -> AoT:
+    depsTable: Table = doc.get(TOMLDocKeys.DEPENDENCIES)
 
-    def __init__(self, metaDict: dict[str, str]):
-        self.modId = metaDict.get('modId')
-        self.version = metaDict.get('version')
-        self.displayName = metaDict.get('displayName')
-        self.displayURL = metaDict.get('displayURL')
-        self.description = metaDict.get('description')
-        self.side = metaDict.get('side')
-                    
+    if type(depsTable) is not Table:
+        raise ValueError(f'Could not find \'{TOMLDocKeys.DEPENDENCIES}\' table')
+    
+    depsAot: AoT = depsTable.get(modId)
 
-
-
+    if type(depsAot) is not AoT:
+        raise ValueError(f'Could not find \'{modId}\' dependency AoT')
+    
+    return depsAot
 
 
 #################################################################
@@ -62,27 +110,30 @@ class JarFile:
         self.path = path
 
 
-    def extract_metadata(self) -> Metadata:
+    def get_metadata(self) -> tuple[Optional[str], Optional[str], Optional[str], Optional[str], Optional[str], Optional[str]]:
         tomlDoc = _get_toml_doc(self.path)
 
         if tomlDoc is None:
             raise ValueError('No neoforge toml file found in jar file')
         
-        modsAot: Optional[list[dict[str, str]]] = tomlDoc.get('mods')
+        modTable = _get_metadata_table(tomlDoc)
 
-        if modsAot is None:
-            raise ValueError('No mods array of tables was found')
+        return (
+            modTable.get(MetadataKeys.MODID),
+            modTable.get(MetadataKeys.VERSION),
+            modTable.get(MetadataKeys.DISPLAYNAME),
+            modTable.get(MetadataKeys.DISPLAYURL),
+            modTable.get(MetadataKeys.DESCRIPTION),
+            modTable.get(MetadataKeys.SIDE)
+        )
+    
+
+    def get_dependencies(self) -> list[tuple[Optional[str], Optional[str], Optional[str], Optional[str]]]:
+        tomlDoc = _get_toml_doc(self.path)
+
+
+
         
-        if len(modsAot) != 1:
-            raise ValueError('Expected only one element in mods array of tables')
-        
-        if modsAot[0] is not dict:
-            raise ValueError('Unexpected type in mods array of tables')
-
-        return Metadata(modsAot[0])
-
-
-
 
 
 
